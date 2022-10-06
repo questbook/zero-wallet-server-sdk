@@ -30,28 +30,31 @@ test.beforeEach((t) => {
 });
 
 test('Create Zero Wallet and check provider getter', async (t) => {
-  console.log(67);
   t.is(t.context.zeroWallet.getProvider(5), t.context.providers[5]);
 });
 
 test('Create Zero Wallet and check gastank getter', async (t) => {
-  const provider = new ethers.providers.JsonRpcProvider(
-    'http://localhost:8545'
+  t.is(t.context.zeroWallet.getGasTank(5), t.context.gasTanks[5]);
+});
+
+test('Create Zero Wallet and check gastank setter', async (t) => {
+  const newGasTank = {
+    dappName: 'newTestDappName',
+    apiKey: 'newTestApiKey',
+    fundingKey: 'newTestFundingKey',
+  };
+
+  t.context.zeroWallet.setGasTank(5, newGasTank);
+
+  t.is(t.context.zeroWallet.getGasTank(5), newGasTank);
+});
+
+test('Create Zero Wallet and check provider setter', async (t) => {
+  const newProvider = new ethers.providers.JsonRpcProvider(
+    'http://localhost:8546'
   );
 
-  const providers: ZeroWalletProviders = {
-    5: provider,
-  };
+  t.context.zeroWallet.setProvider(5, newProvider);
 
-  const gasTanks: GasTanks = {
-    5: {
-      dappName: 'test',
-      apiKey: 'test',
-      fundingKey: 'test',
-    },
-  };
-
-  const zeroWallet = new ZeroWallet(providers, gasTanks);
-
-  t.is(zeroWallet.getGasTank(5), gasTanks[5]);
+  t.is(t.context.zeroWallet.getProvider(5), newProvider);
 });
