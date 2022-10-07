@@ -1,27 +1,28 @@
 import anyTest, { TestFn } from 'ava';
 import { ethers } from 'ethers';
 
+import { GasTank } from '../lib/GasTank';
 import { ZeroWallet } from '../lib/ZeroWallet';
-import { GasTanks, ZeroWalletProviders } from '../types';
+import { GasTankProps, GasTanksType, ZeroWalletProvidersType } from '../types';
 
 const test = anyTest as TestFn<{
   zeroWallet: ZeroWallet;
-  providers: ZeroWalletProviders;
-  gasTanks: GasTanks;
+  providers: ZeroWalletProvidersType;
+  gasTanks: GasTanksType;
 }>;
 
 test.beforeEach((t) => {
   t.context.providers = {
     5: new ethers.providers.JsonRpcProvider('http://localhost:8545'),
-  } as ZeroWalletProviders;
+  } as ZeroWalletProvidersType;
 
   t.context.gasTanks = {
     5: {
-      dappName: 'testDappName',
+      gasTankName: 'testDappName',
       apiKey: 'testApiKey',
       fundingKey: 'testFundingKey',
     },
-  } as GasTanks;
+  } as GasTanksType;
 
   t.context.zeroWallet = new ZeroWallet(
     t.context.providers,
@@ -34,19 +35,22 @@ test('Create Zero Wallet and check provider getter', async (t) => {
 });
 
 test('Create Zero Wallet and check gastank getter', async (t) => {
-  t.is(t.context.zeroWallet.getGasTank(5), t.context.gasTanks[5]);
+  t.deepEqual(
+    t.context.zeroWallet.getGasTank(5),
+    new GasTank(t.context.gasTanks[5]!)
+  );
 });
 
 test('Create Zero Wallet and check gastank setter', async (t) => {
-  const newGasTank = {
-    dappName: 'newTestDappName',
+  const newGasTank: GasTankProps = {
+    gasTankName: 'newTestDappName',
     apiKey: 'newTestApiKey',
     fundingKey: 'newTestFundingKey',
   };
 
   t.context.zeroWallet.setGasTank(5, newGasTank);
 
-  t.is(t.context.zeroWallet.getGasTank(5), newGasTank);
+  t.deepEqual(t.context.zeroWallet.getGasTank(5), new GasTank(newGasTank));
 });
 
 test('Create Zero Wallet and check provider setter', async (t) => {

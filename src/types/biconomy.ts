@@ -1,89 +1,89 @@
 import { ethers } from 'ethers';
 
-export type SignedTransaction = {
-  readonly transactionHash: string;
-  readonly r: string;
-  readonly s: string;
-  readonly v: number;
+export type SignedTransactionType = {
+  transactionHash: string;
+  r: string;
+  s: string;
+  v: number;
 };
 
-export type BiconomyWalletClient = {
-  readonly engine: any;
-  readonly biconomyAttributes: any;
-  readonly isSignerWithAccounts: any;
-  readonly provider: any;
-  readonly targetProvider: any;
-  readonly walletFactoryAddress: string;
-  readonly baseWalletAddress: string;
-  readonly entryPointAddress: string;
-  readonly handlerAddress: string;
-  readonly providerOrSigner: ethers.Signer | ethers.providers.Provider;
-  readonly networkId: number;
-  readonly walletFactory: ethers.Contract;
-  readonly baseWallet: ethers.Contract;
-  readonly entryPoint: ethers.Contract;
-  readonly checkIfWalletExists: (
+export type BiconomyWalletClientType = {
+  engine: any;
+  biconomyAttributes: any;
+  isSignerWithAccounts: any;
+  provider: any;
+  targetProvider: any;
+  walletFactoryAddress: string;
+  baseWalletAddress: string;
+  entryPointAddress: string;
+  handlerAddress: string;
+  providerOrSigner: ethers.Signer | ethers.providers.Provider;
+  networkId: number;
+  walletFactory: ethers.Contract;
+  baseWallet: ethers.Contract;
+  entryPoint: ethers.Contract;
+  checkIfWalletExists: (
     params: CheckIfWalletExistsParams
   ) => Promise<CheckIfWalletExistsType>;
-  readonly checkIfWalletExistsAndDeploy: (
+  checkIfWalletExistsAndDeploy: (
     params: CheckIfWalletExistsAndDeployParams
   ) => Promise<CheckIfWalletExistsAndDeployType>;
-  readonly buildExecTransaction: (
+  buildExecTransaction: (
     params: BuildExecTransactionParams
-  ) => Promise<BuildExecTransaction>;
-  readonly sendBiconomyWalletTransaction: (
+  ) => Promise<BuildExecTransactionType>;
+  sendBiconomyWalletTransaction: (
     params: SendBiconomyWalletTransactionParams
   ) => Promise<string>;
 };
 
 export type SendBiconomyWalletTransactionParams = {
-  readonly execTransactionBody: BuildExecTransaction;
-  readonly walletAddress: string;
-  readonly signature: string;
-  readonly webHookAttributes?: WebHookAttributesType;
+  execTransactionBody: BuildExecTransactionType;
+  walletAddress: string;
+  signature: string;
+  webHookAttributes?: WebHookAttributesType;
 };
 
 export type WebHookAttributesType = {
-  readonly webHookId: string;
-  readonly webHookData: any;
+  webHookId: string;
+  webHookData: any;
 };
 
 export type CheckIfWalletExistsParams = {
-  readonly eoa: string;
+  eoa: string;
 };
 
 export type CheckIfWalletExistsAndDeployParams = {
-  readonly eoa: string;
-  readonly webHookAttributes: any;
+  eoa: string;
+  webHookAttributes: any;
 };
 
 export type CheckIfWalletExistsType = {
-  readonly doesWalletExist: boolean;
-  readonly walletAddress: string;
+  doesWalletExist: boolean;
+  walletAddress: string;
 };
 
 export type CheckIfWalletExistsAndDeployType = {
-  readonly walletAddress: string;
-  readonly txHash: string;
+  walletAddress: string;
+  txHash: string;
 };
 
 export type BuildExecTransactionParams = {
-  readonly data?: string;
-  readonly to: string;
-  readonly walletAddress: string;
+  data?: string;
+  to: string;
+  walletAddress: string;
 };
 
-export type BuildExecTransaction = {
-  readonly to: string;
-  readonly value: number;
-  readonly data: string;
-  readonly operation: number;
-  readonly targetTxGas: number;
-  readonly baseGas: number;
-  readonly gasPrice: number;
-  readonly gasToken: string;
-  readonly refundReceiver: string;
-  readonly nonce: number;
+export type BuildExecTransactionType = {
+  to: string;
+  value: number;
+  data: string;
+  operation: number;
+  targetTxGas: number;
+  baseGas: number;
+  gasPrice: number;
+  gasToken: string;
+  refundReceiver: string;
+  nonce: number;
 };
 
-export type SendBiconomyWalletTransaction = string;
+export type SendBiconomyWalletTransactionType = string;

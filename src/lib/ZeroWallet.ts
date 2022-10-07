@@ -1,22 +1,25 @@
 import { ethers } from 'ethers';
 
-import {
-  GasTank,
-  GasTanks,
-  SupportedChainId,
-  ZeroWalletProviders,
-} from '../types';
+import { SupportedChainId } from '../constants/chains';
+import { GasTankProps, GasTanksType, ZeroWalletProvidersType } from '../types';
+
+import { GasTank } from './GasTank';
 
 export class ZeroWallet {
-  #providers = {} as ZeroWalletProviders;
-  #biconomyDapps = {} as GasTanks;
+  #providers = {} as ZeroWalletProvidersType;
+  #gasTanks = {} as { [key in SupportedChainId]: GasTank };
 
-  constructor(providers: ZeroWalletProviders, biconomyDapps: GasTanks) {
+  constructor(providers: ZeroWalletProvidersType, gasTanks: GasTanksType) {
     this.#providers = providers;
-    this.#biconomyDapps = biconomyDapps;
+
+    Object.entries(gasTanks).forEach((gasTank: [string, GasTankProps]) => {
+      this.#gasTanks[parseInt(gasTank[0]) as SupportedChainId] = new GasTank(
+        gasTank[1]
+      );
+    });
   }
 
-  getProvider(networkId: SupportedChainId) {
+  getProvider(networkId: SupportedChainId): ethers.providers.JsonRpcProvider {
     return this.#providers[networkId];
   }
 
@@ -27,11 +30,11 @@ export class ZeroWallet {
     this.#providers[networkId] = provider;
   }
 
-  getGasTank(networkId: SupportedChainId) {
-    return this.#biconomyDapps[networkId];
+  getGasTank(networkId: SupportedChainId): GasTank {
+    return this.#gasTanks[networkId];
   }
 
-  setGasTank(networkId: SupportedChainId, gasTank: GasTank) {
-    this.#biconomyDapps[networkId] = gasTank;
+  setGasTank(networkId: SupportedChainId, gasTank: GasTankProps) {
+    this.#gasTanks[networkId] = new GasTank(gasTank);
   }
 }
