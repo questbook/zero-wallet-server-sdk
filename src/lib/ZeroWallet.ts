@@ -1,40 +1,51 @@
-import { ethers } from 'ethers';
-
 import { SupportedChainId } from '../constants/chains';
-import { GasTankProps, GasTanksType, ZeroWalletProvidersType } from '../types';
+import { GasTankProps, GasTanksType, ZeroWalletProviderType } from '../types';
+import { addWorkspace } from '../utils/biconomy';
+import { configEnv } from '../utils/global';
 
 import { GasTank } from './GasTank';
 
+configEnv();
 export class ZeroWallet {
-  #providers = {} as ZeroWalletProvidersType;
-  #gasTanks = {} as { [key in SupportedChainId]: GasTank };
+    #gasTanks = {} as { [key: string]: GasTank };
 
-  constructor(providers: ZeroWalletProvidersType, gasTanks: GasTanksType) {
-    this.#providers = providers;
+    constructor(gasTanks?: GasTanksType) {
+        if (gasTanks) {
+            gasTanks.forEach((gasTank: GasTankProps) => {
+                this.#gasTanks[gasTank.apiKey] = new GasTank(gasTank);
+            });
+        }
+    }
 
-    Object.entries(gasTanks).forEach((gasTank: [string, GasTankProps]) => {
-      this.#gasTanks[parseInt(gasTank[0]) as SupportedChainId] = new GasTank(
-        gasTank[1]
-      );
-    });
-  }
+    getGasTank(apiKey: string): GasTank {
+        return this.#gasTanks[apiKey];
+    }
 
-  getProvider(networkId: SupportedChainId): ethers.providers.JsonRpcProvider {
-    return this.#providers[networkId];
-  }
+    addGasTank(gasTank: GasTankProps) {
+        this.#gasTanks[gasTank.apiKey] = new GasTank(gasTank);
+    }
 
-  setProvider(
-    networkId: SupportedChainId,
-    provider: ethers.providers.JsonRpcProvider
-  ) {
-    this.#providers[networkId] = provider;
-  }
+    async createGasTank(
+        gasTankName: string,
+        chainId: SupportedChainId,
+        provider: ZeroWalletProviderType
+    ): Promise<GasTank> {
+        const { apiKey, fundingKey } = await addWorkspace(
+            gasTankName,
+            chainId.toString(),
+            'TODO_AUTH_TOKEN'
+        );
 
-  getGasTank(networkId: SupportedChainId): GasTank {
-    return this.#gasTanks[networkId];
-  }
+        const newGasTank = new GasTank({
+            gasTankName: gasTankName,
+            apiKey: apiKey,
+            fundingKey: fundingKey,
+            chainId: chainId,
+            provider: provider
+        });
 
-  setGasTank(networkId: SupportedChainId, gasTank: GasTankProps) {
-    this.#gasTanks[networkId] = new GasTank(gasTank);
-  }
+        this.#gasTanks[apiKey] = newGasTank;
+
+        return newGasTank;
+    }
 }
