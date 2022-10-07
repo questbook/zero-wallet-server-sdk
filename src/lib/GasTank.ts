@@ -119,16 +119,24 @@ export class GasTank {
     async buildExecTransaction(
         populatedTx: string,
         targetContractAddress: string,
-        scwAddress: string
+        zeroWalletAddress: string
     ) {
         await this.#waitForBiconomyWalletClient();
+
+        // @TODO: check for nonce before deploying the scw
+
+        const scwAddress = await this.deploySCW(zeroWalletAddress, {
+            webHookData: ''
+        });
+
         const safeTXBody =
             await this.#biconomyWalletClient!.buildExecTransaction({
                 data: populatedTx,
                 to: targetContractAddress,
                 walletAddress: scwAddress
             });
-        return safeTXBody;
+
+        return { scwAddress, safeTXBody };
     }
 
     async sendGaslessTransaction(
