@@ -25,7 +25,7 @@ test.beforeEach((t) => {
     t.context.testApiKey = process.env.TEST_API_KEY ?? 'TEST_API_KEY';
     t.context.gasTanks = [
         {
-            gasTankName: 'testGasTankName',
+            name: 'testGasTankName',
             apiKey: t.context.testApiKey,
             fundingKey: 'testFundingKey',
             chainId: 5,
@@ -45,7 +45,7 @@ test('Create Zero Wallet and check gastank getter', async (t) => {
 
 test('Create Zero Wallet and check gastank setter', async (t) => {
     const newGasTank: GasTankProps = {
-        gasTankName: 'newTestDappName',
+        name: 'newTestDappName',
         apiKey: t.context.testApiKey,
         fundingKey: 'newTestFundingKey',
         chainId: 5,

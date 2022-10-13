@@ -1,15 +1,11 @@
-import { Biconomy } from '@biconomy/mexa';
-
 import { SupportedChainId } from '../constants/chains';
 import {
-    BiconomyWalletClientType,
-    BuildExecTransactionType,
     GasTankProps,
-    WebHookAttributesType,
-    ZeroWalletProviderType
+    SendGaslessTransactionParams,
+    SendGaslessTransactionType
 } from '../types';
-import { delay } from '../utils/global';
-import { getTransactionReceipt } from '../utils/provider';
+
+import { BiconomyRelayer } from './relayers/BiconomyRelayer';
 
 export class GasTank {
     // public fields
@@ -17,166 +13,29 @@ export class GasTank {
     chainId: SupportedChainId;
 
     // private fields
-    #provider: ZeroWalletProviderType;
-    #apiKey: string;
-    #fundingKey: string;
-    #biconomy = {} as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-    #biconomyWalletClient?: BiconomyWalletClientType;
+    #relayer: BiconomyRelayer; // We can change this
 
     constructor(gasTank: GasTankProps) {
-        this.gasTankName = gasTank.gasTankName;
-        this.#apiKey = gasTank.apiKey;
-        this.#fundingKey = gasTank.fundingKey;
+        this.gasTankName = gasTank.name;
         this.chainId = gasTank.chainId;
-        this.#provider = gasTank.provider;
 
-        this.#initBiconomy(gasTank.provider).then(
-            (biconomyWalletClient: BiconomyWalletClientType) => {
-                this.#biconomyWalletClient = biconomyWalletClient;
-            }
-        );
-    }
-
-    async #waitForBiconomyWalletClient() {
-        do {
-            this.#biconomyWalletClient = this.#biconomy.biconomyWalletClient;
-            if (!this.#biconomyWalletClient) {
-                await delay(500);
-            }
-        } while (!this.#biconomyWalletClient);
-    }
-
-    async #initBiconomy(
-        provider: ZeroWalletProviderType
-    ): Promise<BiconomyWalletClientType> {
-        this.#biconomy = new Biconomy(provider, {
-            apiKey: this.#apiKey
+        this.#relayer = new BiconomyRelayer({
+            name: gasTank.name,
+            chainId: gasTank.chainId,
+            provider: gasTank.provider,
+            apiKey: gasTank.apiKey,
+            fundingKey: gasTank.fundingKey
         });
-
-        return new Promise<BiconomyWalletClientType>((resolve, reject) => {
-            this.#biconomy
-                .onEvent(this.#biconomy.READY, async () => {
-                    let biconomyWalletClient: BiconomyWalletClientType;
-
-                    try {
-                        do {
-                            biconomyWalletClient =
-                                this.#biconomy.biconomyWalletClient;
-                            if (!biconomyWalletClient) {
-                                await delay(500);
-                            }
-                        } while (!biconomyWalletClient);
-
-                        resolve(biconomyWalletClient);
-                    } catch (err) {
-                        reject(err);
-                    }
-                })
-                .onEvent(this.#biconomy.ERROR, (error: string) => {
-                    reject(error);
-                });
-        });
-    }
-
-    async #unsafeDeploySCW(zeroWalletAddress: string): Promise<string> {
-        await this.#waitForBiconomyWalletClient();
-
-        const { doesWalletExist, walletAddress } =
-            await this.#biconomyWalletClient!.checkIfWalletExists({
-                eoa: zeroWalletAddress
-            });
-
-        let scwAddress: string;
-
-        if (!doesWalletExist) {
-            const { walletAddress, txHash } =
-                await this.#biconomyWalletClient!.checkIfWalletExistsAndDeploy({
-                    eoa: zeroWalletAddress
-                }); // default index(salt) 0
-
-            await getTransactionReceipt(this.#provider, txHash);
-
-            scwAddress = walletAddress;
-        } else {
-            scwAddress = walletAddress;
-        }
-
-        return scwAddress;
-    }
-
-    async deploySCW(
-        zeroWalletAddress: string,
-        webHookAttributes: WebHookAttributesType
-    ) {
-        // @TODO: add nonce check before deploying the scw
-        webHookAttributes;
-
-        const scwAddress = await this.#unsafeDeploySCW(zeroWalletAddress);
-
-        return scwAddress;
-    }
-
-    async buildExecTransaction(
-        populatedTx: string,
-        targetContractAddress: string,
-        zeroWalletAddress: string
-    ) {
-        await this.#waitForBiconomyWalletClient();
-
-        // @TODO: check for nonce before deploying the scw
-
-        const scwAddress = await this.deploySCW(zeroWalletAddress, {
-            webHookData: ''
-        });
-
-        const safeTXBody =
-            await this.#biconomyWalletClient!.buildExecTransaction({
-                data: populatedTx,
-                to: targetContractAddress,
-                walletAddress: scwAddress
-            });
-
-        return { scwAddress, safeTXBody };
     }
 
     async sendGaslessTransaction(
-        safeTXBody: BuildExecTransactionType,
-        scwAddress: string,
-        signature: string,
-        webHookAttributes: WebHookAttributesType
-    ) {
-        await this.#waitForBiconomyWalletClient();
-
-        webHookAttributes;
-        // @TODO: check for nonce before sending transaction
-        const txHash =
-            await this.#biconomyWalletClient?.sendBiconomyWalletTransaction({
-                execTransactionBody: safeTXBody,
-                walletAddress: scwAddress,
-                signature
-            });
-        return txHash;
-    }
-
-    get apiKey() {
-        return this.#apiKey;
-    }
-
-    set apiKey(apiKey: string) {
-        this.#apiKey = apiKey;
-    }
-
-    get fundingKey(): string {
-        return this.#fundingKey;
-    }
-
-    set fundingKey(fundingKey: string) {
-        this.#fundingKey = fundingKey;
+        params: SendGaslessTransactionParams
+    ): Promise<SendGaslessTransactionType> {
+        // eslint-disable-line @typescript-eslint/no-explicit-any
+        return this.#relayer.sendGaslessTransaction(params);
     }
 
     public toString(): string {
-        return `GasTank: ${this.gasTankName}, apiKey: ${
-            this.#apiKey
-        }, fundingKey: ${this.#fundingKey}, chainId: ${this.chainId}`;
+        return `GasTank: ${this.gasTankName}, chainId: ${this.chainId}`;
     }
 }

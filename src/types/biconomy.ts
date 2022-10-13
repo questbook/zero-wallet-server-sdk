@@ -1,10 +1,33 @@
 import { ethers } from 'ethers';
 
+import { SupportedChainId } from '../constants/chains';
+
+import { ZeroWalletProviderType } from './zeroWallet';
+
 export type SignedTransactionType = {
     transactionHash: string;
     r: string;
     s: string;
     v: number;
+};
+
+export type BiconomyRelayerProps = {
+    name: string;
+    apiKey: string;
+    fundingKey: string;
+    chainId: SupportedChainId;
+    provider: ZeroWalletProviderType;
+};
+
+export type BiconomyInitParams = {
+    provider: ZeroWalletProviderType;
+};
+
+export type BiconomySendGaslessTransactionParams = {
+    safeTXBody: BuildExecTransactionType;
+    scwAddress: string;
+    signature: string;
+    webHookAttributes: WebHookAttributesType;
 };
 
 export type BiconomyWalletClientType = {
@@ -85,3 +108,9 @@ export type BuildExecTransactionType = {
 };
 
 export type SendBiconomyWalletTransactionType = string;
+
+export type InitBiconomyRelayerProps = {
+    provider: ZeroWalletProviderType;
+};
+
+export type InitBiconomyRelayerType = BiconomyWalletClientType;
