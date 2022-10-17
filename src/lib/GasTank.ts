@@ -1,43 +1,41 @@
-import { GasTankProps } from '../types';
+import { SupportedChainId } from '../constants/chains';
+import {
+    GasTankProps,
+    SendGaslessTransactionParams,
+    SendGaslessTransactionType
+} from '../types';
+
+import { BiconomyRelayer } from './relayers/BiconomyRelayer';
 
 export class GasTank {
-  #gasTankName: string;
-  #apiKey: string;
-  #fundingKey: string;
+    // public fields
+    gasTankName: string;
+    chainId: SupportedChainId;
 
-  constructor(gasTank: GasTankProps) {
-    this.#gasTankName = gasTank.gasTankName;
-    this.#apiKey = gasTank.apiKey;
-    this.#fundingKey = gasTank.fundingKey;
-  }
+    // private fields
+    #relayer: BiconomyRelayer; // We can change this
 
-  get gasTankName(): string {
-    return this.#gasTankName;
-  }
+    constructor(gasTank: GasTankProps) {
+        this.gasTankName = gasTank.name;
+        this.chainId = gasTank.chainId;
 
-  set gasTankName(gasTankName: string) {
-    this.#gasTankName = gasTankName;
-  }
+        this.#relayer = new BiconomyRelayer({
+            name: gasTank.name,
+            chainId: gasTank.chainId,
+            provider: gasTank.provider,
+            apiKey: gasTank.apiKey,
+            fundingKey: gasTank.fundingKey
+        });
+    }
 
-  get apiKey(): string {
-    return this.#apiKey;
-  }
+    async sendGaslessTransaction(
+        params: SendGaslessTransactionParams
+    ): Promise<SendGaslessTransactionType> {
+        // eslint-disable-line @typescript-eslint/no-explicit-any
+        return this.#relayer.sendGaslessTransaction(params);
+    }
 
-  set apiKey(apiKey: string) {
-    this.#apiKey = apiKey;
-  }
-
-  get fundingKey(): string {
-    return this.#fundingKey;
-  }
-
-  set fundingKey(fundingKey: string) {
-    this.#fundingKey = fundingKey;
-  }
-
-  public toString(): string {
-    return `GasTank: ${this.#gasTankName}, apiKey: ${
-      this.#apiKey
-    }, fundingKey: ${this.#fundingKey}`;
-  }
+    public toString(): string {
+        return `GasTank: ${this.gasTankName}, chainId: ${this.chainId}`;
+    }
 }

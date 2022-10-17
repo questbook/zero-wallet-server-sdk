@@ -19,7 +19,7 @@
     "test:build": "run-p build:*",
     "test:lint": "eslint src --ext .ts",
     "test:prettier": "prettier \"src/**/*.ts\" --list-different",
-    "test:unit": "nyc ava",
+    "test:unit": "nyc ava src/**/*.spec.ts",
     "watch:build": "tsc -p tsconfig.json -w",
     "watch:test": "ava --watch",
     "cov": "run-s build test:unit cov:html cov:lcov && open-cli coverage/index.html",
@@ -38,10 +38,12 @@
   "dependencies": {
     "@biconomy/mexa": "^2.0.36",
     "@bitauth/libauth": "^1.17.1",
-    "@types/node": "^18.8.2"
+    "@types/node": "^18.8.2",
+    "axios": "^1.1.2",
+    "dotenv": "^16.0.3"
   },
   "devDependencies": {
-    "@ava/typescript": "^1.1.1",
+    "@ava/typescript": "^3.0.1",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
@@ -73,15 +75,20 @@
     "README.md"
   ],
   "ava": {
-    "extensions": [
-			"ts"
-		],
     "require": [
       "ts-node/register"
     ],
     "failFast": true,
     "timeout": "60s",
-    
+    "typescript": {
+      "extensions": [
+        "ts"
+      ],
+      "rewritePaths": {
+        "src/": "build/main/"
+      },
+      "compile": "tsc"
+    },
     "files": [
       "./src/**/*.spec.ts"
     ]
@@ -92,7 +99,16 @@
     }
   },
   "prettier": {
-    "singleQuote": true
+    "semi": true,
+    "trailingComma": "none",
+    "singleQuote": true,
+    "printWidth": 80,
+    "tabWidth": 4,
+    "bracketSpacing": true,
+    "bracketSameLine": true,
+    "parser": "typescript",
+    "embeddedLanguageFormatting": "auto",
+    "singleAttributePerLine": false
   },
   "nyc": {
     "extends": "@istanbuljs/nyc-config-typescript",
