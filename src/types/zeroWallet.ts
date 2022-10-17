@@ -1,5 +1,17 @@
 import { ethers } from 'ethers';
 
-export interface ZeroWalletProviders {
-    [key: number]: ethers.providers.Provider
-}
+import { SupportedChainId } from '../constants/chains';
+
+export type ZeroWalletProvidersType = {
+  [key in SupportedChainId]: ethers.providers.JsonRpcProvider;
+};
+
+export type GasTankProps = {
+  gasTankName: string;
+  apiKey: string;
+  fundingKey: string;
+};
+
+export type GasTanksType = {
+  [key in SupportedChainId]?: GasTankProps;
+};
