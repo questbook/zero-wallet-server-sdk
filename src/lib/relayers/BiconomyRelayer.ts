@@ -22,7 +22,7 @@ export class BiconomyRelayer implements BaseRelayer {
     #fundingKey: string;
     #biconomy = {} as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     #biconomyWalletClient?: BiconomyWalletClientType;
-    #biconomyLoading: Promise<void>
+    #biconomyLoading: Promise<void>;
 
     constructor(relayerProps: BiconomyRelayerProps) {
         this.chainId = relayerProps.chainId;
@@ -32,46 +32,44 @@ export class BiconomyRelayer implements BaseRelayer {
 
         this.#biconomyLoading = this.initRelayer({
             provider: this.#provider
-        } as InitBiconomyRelayerProps)
+        } as InitBiconomyRelayerProps);
     }
 
     async #waitForBiconomyWalletClient() {
         await this.#biconomyLoading;
     }
 
-    async initRelayer(
-        params: InitBiconomyRelayerProps
-    ): Promise<void> {
+    async initRelayer(params: InitBiconomyRelayerProps): Promise<void> {
         this.#biconomy = new Biconomy(params.provider, {
             apiKey: this.#apiKey
         });
 
-        const _biconomyWalletClient = await new Promise<BiconomyWalletClientType>((resolve, reject) => {
-            this.#biconomy
-                .onEvent(this.#biconomy.READY, async () => {
-                    let biconomyWalletClient: BiconomyWalletClientType;
+        const _biconomyWalletClient =
+            await new Promise<BiconomyWalletClientType>((resolve, reject) => {
+                this.#biconomy
+                    .onEvent(this.#biconomy.READY, async () => {
+                        let biconomyWalletClient: BiconomyWalletClientType;
 
-                    try {
-                        do {
-                            biconomyWalletClient =
-                                this.#biconomy.biconomyWalletClient;
-                            if (!biconomyWalletClient) {
-                                await delay(500);
-                            }
-                        } while (!biconomyWalletClient);
+                        try {
+                            do {
+                                biconomyWalletClient =
+                                    this.#biconomy.biconomyWalletClient;
+                                if (!biconomyWalletClient) {
+                                    await delay(500);
+                                }
+                            } while (!biconomyWalletClient);
 
-                        resolve(biconomyWalletClient);
-                    } catch (err) {
-                        reject(err);
-                    }
-                })
-                .onEvent(this.#biconomy.ERROR, (error: string) => {
-                    reject(error);
-                });
-        });
+                            resolve(biconomyWalletClient);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    })
+                    .onEvent(this.#biconomy.ERROR, (error: string) => {
+                        reject(error);
+                    });
+            });
 
         this.#biconomyWalletClient = _biconomyWalletClient;
-
     }
 
     async #unsafeDeploySCW(zeroWalletAddress: string): Promise<string> {
