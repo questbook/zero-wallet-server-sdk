@@ -59,7 +59,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     }
 
     async refreshUserAuthorization(address: string) {
-        if (!(await this.#existsAddress(address))) {
+        if (!(await this.#doesAddressExist(address))) {
             throw new Error('User not authorized!');
         }
 
@@ -73,7 +73,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         return newNonce;
     }
 
-    async #existsAddress(address: string) {
+    async #doesAddressExist(address: string) {
         const results = await this.#query(
             'SELECT * FROM gasless_login WHERE address = $1;',
             [address]
@@ -103,7 +103,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         return results.rows[0].nonce;
     }
 
-    async checkAuthorizedUser(address: string, nonce: string) {
+    async isUserAuthorized(address: string, nonce: string) {
         const results = await this.#query(
             'SELECT * FROM gasless_login WHERE address = $1 AND nonce = $2;',
             [address, nonce]
@@ -115,8 +115,8 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
         const expiration = results.rows[0].expiration;
 
-        const cur_date = new Date().getTime() / 1000;
+        const curDate = new Date().getTime() / 1000;
 
-        return expiration > cur_date;
+        return expiration > curDate;
     }
 }

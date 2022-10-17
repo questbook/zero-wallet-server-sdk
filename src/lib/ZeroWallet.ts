@@ -1,9 +1,7 @@
 import { DatabaseConfig, GasTankProps, GasTanksType } from '../types';
-import { configEnv } from '../utils/global';
 
 import { GasTank } from './GasTank';
 
-configEnv();
 export class ZeroWallet {
     #gasTanks = {} as { [key: string]: GasTank };
     #databaseConfig: DatabaseConfig;

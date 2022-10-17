@@ -3,5 +3,5 @@ export interface BaseAuthorizer {
 
     addAuthorizedUser: (address: string) => Promise<void>;
     refreshUserAuthorization: (address: string) => Promise<string>;
-    checkAuthorizedUser: (address: string, nonce: string) => Promise<boolean>;
+    isUserAuthorized: (address: string, nonce: string) => Promise<boolean>;
 }
