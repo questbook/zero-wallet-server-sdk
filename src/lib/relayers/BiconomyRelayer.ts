@@ -5,6 +5,7 @@ import {
     BiconomyRelayerProps,
     BiconomySendGaslessTransactionParams,
     BiconomyWalletClientType,
+    DatabaseConfig,
     InitBiconomyRelayerProps,
     SendGaslessTransactionType,
     WebHookAttributesType,
@@ -12,6 +13,7 @@ import {
 } from '../../types';
 import { delay } from '../../utils/global';
 import { getTransactionReceipt } from '../../utils/provider';
+import QuestbookAuthorizer from '../authorizers/QuestbookAuthorizer';
 
 import { BaseRelayer } from './BaseRelayer';
 export class BiconomyRelayer implements BaseRelayer {
@@ -23,8 +25,12 @@ export class BiconomyRelayer implements BaseRelayer {
     #biconomy = {} as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     #biconomyWalletClient?: BiconomyWalletClientType;
     #biconomyLoading: Promise<void>;
+    #authorizer: QuestbookAuthorizer; // We can change the authorizer by simply swapping out the QuestbookAuthorizer
 
-    constructor(relayerProps: BiconomyRelayerProps) {
+    constructor(
+        relayerProps: BiconomyRelayerProps,
+        databaseConfig: DatabaseConfig
+    ) {
         this.chainId = relayerProps.chainId;
         this.#provider = relayerProps.provider;
         this.#apiKey = relayerProps.apiKey;
@@ -33,6 +39,8 @@ export class BiconomyRelayer implements BaseRelayer {
         this.#biconomyLoading = this.initRelayer({
             provider: this.#provider
         } as InitBiconomyRelayerProps);
+
+        this.#authorizer = new QuestbookAuthorizer(databaseConfig);
     }
 
     async #waitForBiconomyWalletClient() {
@@ -120,7 +128,11 @@ export class BiconomyRelayer implements BaseRelayer {
         // @TODO: check for nonce before deploying the scw
 
         const scwAddress = await this.deploySCW(zeroWalletAddress, {
-            webHookData: ''
+            nonce: 'nonce',
+            signedNonce: 'signedNonce',
+            to: 'contractAddress',
+            chainId: 5
+            // @TODO: pass in the right webhook attributes
         });
 
         const safeTXBody =

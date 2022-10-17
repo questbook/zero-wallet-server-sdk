@@ -26,3 +26,11 @@ export type SendGaslessTransactionType = string; // @TODO-update
 export type InitRelayerProps = InitBiconomyRelayerProps; // @TODO-update
 
 export type InitRelayerType = InitBiconomyRelayerType; // @TODO-update
+
+export type DatabaseConfig = {
+    user: string;
+    host: string;
+    database: string;
+    password: string;
+    port: number;
+};

@@ -1,5 +1,6 @@
 import { SupportedChainId } from '../constants/chains';
 import {
+    DatabaseConfig,
     GasTankProps,
     SendGaslessTransactionParams,
     SendGaslessTransactionType
@@ -13,19 +14,22 @@ export class GasTank {
     chainId: SupportedChainId;
 
     // private fields
-    #relayer: BiconomyRelayer; // We can change this
+    #relayer: BiconomyRelayer; // We can simply swap out biconomy by using a different relayer
 
-    constructor(gasTank: GasTankProps) {
+    constructor(gasTank: GasTankProps, databaseConfig: DatabaseConfig) {
         this.gasTankName = gasTank.name;
         this.chainId = gasTank.chainId;
 
-        this.#relayer = new BiconomyRelayer({
-            name: gasTank.name,
-            chainId: gasTank.chainId,
-            provider: gasTank.provider,
-            apiKey: gasTank.apiKey,
-            fundingKey: gasTank.fundingKey
-        });
+        this.#relayer = new BiconomyRelayer(
+            {
+                name: gasTank.name,
+                chainId: gasTank.chainId,
+                provider: gasTank.provider,
+                apiKey: gasTank.apiKey,
+                fundingKey: gasTank.fundingKey
+            },
+            databaseConfig
+        );
     }
 
     async sendGaslessTransaction(
