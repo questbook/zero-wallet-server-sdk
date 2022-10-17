@@ -67,7 +67,10 @@ export type SendBiconomyWalletTransactionParams = {
 };
 
 export type WebHookAttributesType = {
-    webHookData: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    nonce: string;
+    signedNonce: string;
+    to: string;
+    chainId: number;
 };
 
 export type CheckIfWalletExistsParams = {
