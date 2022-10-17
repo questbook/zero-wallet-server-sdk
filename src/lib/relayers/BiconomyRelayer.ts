@@ -14,7 +14,6 @@ import { delay } from '../../utils/global';
 import { getTransactionReceipt } from '../../utils/provider';
 
 import { BaseRelayer } from './BaseRelayer';
-
 export class BiconomyRelayer implements BaseRelayer {
     name = 'Biconomy';
     chainId: SupportedChainId;
@@ -23,6 +22,7 @@ export class BiconomyRelayer implements BaseRelayer {
     #fundingKey: string;
     #biconomy = {} as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     #biconomyWalletClient?: BiconomyWalletClientType;
+    #biconomyLoading: Promise<void>
 
     constructor(relayerProps: BiconomyRelayerProps) {
         this.chainId = relayerProps.chainId;
@@ -30,32 +30,23 @@ export class BiconomyRelayer implements BaseRelayer {
         this.#apiKey = relayerProps.apiKey;
         this.#fundingKey = relayerProps.fundingKey;
 
-        this.initRelayer({
+        this.#biconomyLoading = this.initRelayer({
             provider: this.#provider
-        } as InitBiconomyRelayerProps).then(
-            (biconomyWalletClient: BiconomyWalletClientType) => {
-                this.#biconomyWalletClient = biconomyWalletClient;
-            }
-        );
+        } as InitBiconomyRelayerProps)
     }
 
     async #waitForBiconomyWalletClient() {
-        do {
-            this.#biconomyWalletClient = this.#biconomy.biconomyWalletClient;
-            if (!this.#biconomyWalletClient) {
-                await delay(500);
-            }
-        } while (!this.#biconomyWalletClient);
+        await this.#biconomyLoading;
     }
 
     async initRelayer(
         params: InitBiconomyRelayerProps
-    ): Promise<BiconomyWalletClientType> {
+    ): Promise<void> {
         this.#biconomy = new Biconomy(params.provider, {
             apiKey: this.#apiKey
         });
 
-        return new Promise<BiconomyWalletClientType>((resolve, reject) => {
+        const _biconomyWalletClient = await new Promise<BiconomyWalletClientType>((resolve, reject) => {
             this.#biconomy
                 .onEvent(this.#biconomy.READY, async () => {
                     let biconomyWalletClient: BiconomyWalletClientType;
@@ -78,6 +69,9 @@ export class BiconomyRelayer implements BaseRelayer {
                     reject(error);
                 });
         });
+
+        this.#biconomyWalletClient = _biconomyWalletClient;
+
     }
 
     async #unsafeDeploySCW(zeroWalletAddress: string): Promise<string> {
