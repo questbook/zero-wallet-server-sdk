@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 
 import { SupportedChainId } from '../constants/chains';
 
-import { ZeroWalletProviderType } from './zeroWallet';
+import { SignedMessage, ZeroWalletProviderType } from './zeroWallet';
 
 export type SignedTransactionType = {
     transactionHash: string;
@@ -25,6 +25,7 @@ export type BiconomyInitParams = {
 
 export type BiconomySendGaslessTransactionParams = {
     safeTXBody: BuildExecTransactionType;
+    zeroWalletAddress: string;
     scwAddress: string;
     signature: string;
     webHookAttributes: WebHookAttributesType;
@@ -68,7 +69,7 @@ export type SendBiconomyWalletTransactionParams = {
 
 export type WebHookAttributesType = {
     nonce: string;
-    signedNonce: string;
+    signedNonce: SignedMessage;
     to: string;
     chainId: number;
 };
