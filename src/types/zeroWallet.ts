@@ -34,3 +34,10 @@ export type DatabaseConfig = {
     password: string;
     port: number;
 };
+
+export type SignedMessage = {
+    transactionHash: string,
+    r: string,
+    s: string,
+    v: number
+}

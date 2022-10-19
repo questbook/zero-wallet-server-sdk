@@ -1,10 +1,11 @@
+import { ethers } from 'ethers';
 import { Pool } from 'pg';
 
 import {
     createGaslessLoginTableQuery,
     NONCE_EXPIRATION
 } from '../../constants/database';
-import { DatabaseConfig } from '../../types';
+import { DatabaseConfig, SignedMessage } from '../../types';
 
 import { BaseAuthorizer } from './BaseAuthorizer';
 
@@ -118,5 +119,18 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         const curDate = new Date().getTime() / 1000;
 
         return expiration > curDate;
+    }
+
+    recoverAddress(signedMessage: SignedMessage) {
+        const address = ethers.utils.recoverAddress(
+            signedMessage.transactionHash,
+            {
+                r: signedMessage.r,
+                s: signedMessage.s,
+                v: signedMessage.v
+            }
+        )
+        
+        return address
     }
 }
