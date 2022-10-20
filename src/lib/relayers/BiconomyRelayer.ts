@@ -52,6 +52,7 @@ export class BiconomyRelayer implements BaseRelayer {
             apiKey: this.#apiKey
         });
 
+
         const _biconomyWalletClient =
             await new Promise<BiconomyWalletClientType>((resolve, reject) => {
                 this.#biconomy
@@ -118,6 +119,8 @@ export class BiconomyRelayer implements BaseRelayer {
     ) {
         // @TODO: add check for target contract address
 
+        await this.#waitForBiconomyWalletClient();
+
         if(!(await this.#authorizer.isUserAuthorized(webHookAttributes.signedNonce, webHookAttributes.nonce, zeroWalletAddress))){
             throw new Error('User is not authorized');
         }
@@ -130,7 +133,8 @@ export class BiconomyRelayer implements BaseRelayer {
     async buildExecTransaction(
         populatedTx: string,
         targetContractAddress: string,
-        zeroWalletAddress: string
+        zeroWalletAddress: string,
+        webHookAttributes: WebHookAttributesType
     ) {
         
         // @TODO: add check for target contract address
@@ -141,6 +145,10 @@ export class BiconomyRelayer implements BaseRelayer {
         
         if(!doesWalletExist) {
             throw new Error(`SCW is not deployed for ${scwAddress}`);
+        }
+
+        if(!(await this.#authorizer.isUserAuthorized(webHookAttributes.signedNonce, webHookAttributes.nonce, zeroWalletAddress))){
+            throw new Error('User is not authorized');
         }
 
         const safeTXBody =
