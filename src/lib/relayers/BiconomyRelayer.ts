@@ -52,6 +52,7 @@ export class BiconomyRelayer implements BaseRelayer {
             apiKey: this.#apiKey
         });
 
+
         const _biconomyWalletClient =
             await new Promise<BiconomyWalletClientType>((resolve, reject) => {
                 this.#biconomy
@@ -80,13 +81,19 @@ export class BiconomyRelayer implements BaseRelayer {
         this.#biconomyWalletClient = _biconomyWalletClient;
     }
 
-    async #unsafeDeploySCW(zeroWalletAddress: string): Promise<string> {
+    async doesSCWExists(zeroWalletAddress: string) {
         await this.#waitForBiconomyWalletClient();
 
         const { doesWalletExist, walletAddress } =
             await this.#biconomyWalletClient!.checkIfWalletExists({
                 eoa: zeroWalletAddress
             });
+
+        return { doesWalletExist, walletAddress} ;
+    }
+
+    async #unsafeDeploySCW(zeroWalletAddress: string): Promise<string> {
+        const { doesWalletExist, walletAddress } = await this.doesSCWExists(zeroWalletAddress);
 
         let scwAddress: string;
 
@@ -110,8 +117,13 @@ export class BiconomyRelayer implements BaseRelayer {
         zeroWalletAddress: string,
         webHookAttributes: WebHookAttributesType
     ) {
-        // @TODO: add nonce check before deploying the scw
-        webHookAttributes;
+        // @TODO: add check for target contract address
+
+        await this.#waitForBiconomyWalletClient();
+
+        if(!(await this.#authorizer.isUserAuthorized(webHookAttributes.signedNonce, webHookAttributes.nonce, zeroWalletAddress))){
+            throw new Error('User is not authorized');
+        }
 
         const scwAddress = await this.#unsafeDeploySCW(zeroWalletAddress);
 
@@ -121,19 +133,23 @@ export class BiconomyRelayer implements BaseRelayer {
     async buildExecTransaction(
         populatedTx: string,
         targetContractAddress: string,
-        zeroWalletAddress: string
+        zeroWalletAddress: string,
+        webHookAttributes: WebHookAttributesType
     ) {
+        
+        // @TODO: add check for target contract address
+
         await this.#waitForBiconomyWalletClient();
 
-        // @TODO: check for nonce before deploying the scw
+        const { doesWalletExist, walletAddress: scwAddress } = await this.doesSCWExists(zeroWalletAddress);
+        
+        if(!doesWalletExist) {
+            throw new Error(`SCW is not deployed for ${scwAddress}`);
+        }
 
-        const scwAddress = await this.deploySCW(zeroWalletAddress, {
-            nonce: 'nonce',
-            signedNonce: 'signedNonce',
-            to: 'contractAddress',
-            chainId: 5
-            // @TODO: pass in the right webhook attributes
-        });
+        if(!(await this.#authorizer.isUserAuthorized(webHookAttributes.signedNonce, webHookAttributes.nonce, zeroWalletAddress))){
+            throw new Error('User is not authorized');
+        }
 
         const safeTXBody =
             await this.#biconomyWalletClient!.buildExecTransaction({
@@ -148,10 +164,14 @@ export class BiconomyRelayer implements BaseRelayer {
     async sendGaslessTransaction(
         params: BiconomySendGaslessTransactionParams
     ): Promise<SendGaslessTransactionType> {
+        
+        if(!(await this.#authorizer.isUserAuthorized(params.webHookAttributes.signedNonce, params.webHookAttributes.nonce, params.zeroWalletAddress))){
+            throw new Error('User is not authorized');
+        }
+
         await this.#waitForBiconomyWalletClient();
 
-        params.webHookAttributes;
-        // @TODO: check for nonce before sending transaction
+        // @TODO: add check for target contract address
 
         const txHash =
             await this.#biconomyWalletClient!.sendBiconomyWalletTransaction({
