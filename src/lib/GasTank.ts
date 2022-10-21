@@ -1,3 +1,5 @@
+import {ethers} from 'ethers'
+
 import { SupportedChainId } from '../constants/chains';
 import {
     DatabaseConfig,
@@ -19,14 +21,13 @@ export class GasTank {
     constructor(gasTank: GasTankProps, databaseConfig: DatabaseConfig) {
         this.gasTankName = gasTank.name;
         this.chainId = gasTank.chainId;
-
         this.#relayer = new BiconomyRelayer(
             {
                 name: gasTank.name,
                 chainId: gasTank.chainId,
-                provider: gasTank.provider,
+                provider: new ethers.providers.JsonRpcProvider(gasTank.providerURL),
                 apiKey: gasTank.apiKey,
-                fundingKey: gasTank.fundingKey
+                providerURL:gasTank.providerURL
             },
             databaseConfig
         );

@@ -21,7 +21,6 @@ export class BiconomyRelayer implements BaseRelayer {
     chainId: SupportedChainId;
     #provider: ZeroWalletProviderType;
     #apiKey: string;
-    #fundingKey: string;
     #biconomy = {} as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     #biconomyWalletClient?: BiconomyWalletClientType;
     #biconomyLoading: Promise<void>;
@@ -31,10 +30,12 @@ export class BiconomyRelayer implements BaseRelayer {
         relayerProps: BiconomyRelayerProps,
         databaseConfig: DatabaseConfig
     ) {
+        if (!relayerProps?.provider) {
+            throw new Error('provider is undefined');
+        }
         this.chainId = relayerProps.chainId;
         this.#provider = relayerProps.provider;
         this.#apiKey = relayerProps.apiKey;
-        this.#fundingKey = relayerProps.fundingKey;
 
         this.#biconomyLoading = this.initRelayer({
             provider: this.#provider
@@ -51,7 +52,6 @@ export class BiconomyRelayer implements BaseRelayer {
         this.#biconomy = new Biconomy(params.provider, {
             apiKey: this.#apiKey
         });
-
 
         const _biconomyWalletClient =
             await new Promise<BiconomyWalletClientType>((resolve, reject) => {
@@ -89,11 +89,13 @@ export class BiconomyRelayer implements BaseRelayer {
                 eoa: zeroWalletAddress
             });
 
-        return { doesWalletExist, walletAddress} ;
+        return { doesWalletExist, walletAddress };
     }
 
     async #unsafeDeploySCW(zeroWalletAddress: string): Promise<string> {
-        const { doesWalletExist, walletAddress } = await this.doesSCWExists(zeroWalletAddress);
+        const { doesWalletExist, walletAddress } = await this.doesSCWExists(
+            zeroWalletAddress
+        );
 
         let scwAddress: string;
 
@@ -121,7 +123,13 @@ export class BiconomyRelayer implements BaseRelayer {
 
         await this.#waitForBiconomyWalletClient();
 
-        if(!(await this.#authorizer.isUserAuthorized(webHookAttributes.signedNonce, webHookAttributes.nonce, zeroWalletAddress))){
+        if (
+            !(await this.#authorizer.isUserAuthorized(
+                webHookAttributes.signedNonce,
+                webHookAttributes.nonce,
+                zeroWalletAddress
+            ))
+        ) {
             throw new Error('User is not authorized');
         }
 
@@ -136,18 +144,24 @@ export class BiconomyRelayer implements BaseRelayer {
         zeroWalletAddress: string,
         webHookAttributes: WebHookAttributesType
     ) {
-        
         // @TODO: add check for target contract address
 
         await this.#waitForBiconomyWalletClient();
 
-        const { doesWalletExist, walletAddress: scwAddress } = await this.doesSCWExists(zeroWalletAddress);
-        
-        if(!doesWalletExist) {
+        const { doesWalletExist, walletAddress: scwAddress } =
+            await this.doesSCWExists(zeroWalletAddress);
+
+        if (!doesWalletExist) {
             throw new Error(`SCW is not deployed for ${scwAddress}`);
         }
 
-        if(!(await this.#authorizer.isUserAuthorized(webHookAttributes.signedNonce, webHookAttributes.nonce, zeroWalletAddress))){
+        if (
+            !(await this.#authorizer.isUserAuthorized(
+                webHookAttributes.signedNonce,
+                webHookAttributes.nonce,
+                zeroWalletAddress
+            ))
+        ) {
             throw new Error('User is not authorized');
         }
 
@@ -164,8 +178,13 @@ export class BiconomyRelayer implements BaseRelayer {
     async sendGaslessTransaction(
         params: BiconomySendGaslessTransactionParams
     ): Promise<SendGaslessTransactionType> {
-        
-        if(!(await this.#authorizer.isUserAuthorized(params.webHookAttributes.signedNonce, params.webHookAttributes.nonce, params.zeroWalletAddress))){
+        if (
+            !(await this.#authorizer.isUserAuthorized(
+                params.webHookAttributes.signedNonce,
+                params.webHookAttributes.nonce,
+                params.zeroWalletAddress
+            ))
+        ) {
             throw new Error('User is not authorized');
         }
 
