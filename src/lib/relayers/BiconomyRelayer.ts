@@ -24,12 +24,8 @@ export class BiconomyRelayer implements BaseRelayer {
     #biconomy = {} as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     #biconomyWalletClient?: BiconomyWalletClientType;
     #biconomyLoading: Promise<void>;
-    #authorizer: QuestbookAuthorizer; // We can change the authorizer by simply swapping out the QuestbookAuthorizer
 
-    constructor(
-        relayerProps: BiconomyRelayerProps,
-        databaseConfig: DatabaseConfig
-    ) {
+    constructor(relayerProps: BiconomyRelayerProps) {
         if (!relayerProps?.provider) {
             throw new Error('provider is undefined');
         }
@@ -40,8 +36,6 @@ export class BiconomyRelayer implements BaseRelayer {
         this.#biconomyLoading = this.initRelayer({
             provider: this.#provider
         } as InitBiconomyRelayerProps);
-
-        this.#authorizer = new QuestbookAuthorizer(databaseConfig);
     }
 
     async #waitForBiconomyWalletClient() {
@@ -81,7 +75,10 @@ export class BiconomyRelayer implements BaseRelayer {
         this.#biconomyWalletClient = _biconomyWalletClient;
     }
 
-    async doesSCWExists(zeroWalletAddress: string) {
+    async doesSCWExists(zeroWalletAddress: string): Promise<{
+        doesWalletExist: boolean;
+        walletAddress: string;
+    }> {
         await this.#waitForBiconomyWalletClient();
 
         const { doesWalletExist, walletAddress } =
@@ -115,23 +112,8 @@ export class BiconomyRelayer implements BaseRelayer {
         return scwAddress;
     }
 
-    async deploySCW(
-        zeroWalletAddress: string,
-        webHookAttributes: WebHookAttributesType
-    ) {
-        // @TODO: add check for target contract address
-
+    async deploySCW(zeroWalletAddress: string) {
         await this.#waitForBiconomyWalletClient();
-
-        if (
-            !(await this.#authorizer.isUserAuthorized(
-                webHookAttributes.signedNonce,
-                webHookAttributes.nonce,
-                zeroWalletAddress
-            ))
-        ) {
-            throw new Error('User is not authorized');
-        }
 
         const scwAddress = await this.#unsafeDeploySCW(zeroWalletAddress);
 
@@ -201,6 +183,4 @@ export class BiconomyRelayer implements BaseRelayer {
 
         return txHash;
     }
-
-    // @TODO: use fundingKey to fund the gastank
 }
