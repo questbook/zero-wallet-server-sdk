@@ -19,6 +19,11 @@ export type GasTankProps = BiconomyRelayerProps; // @TODO-update
 
 export type GasTanksType = Array<GasTankProps>;
 
+export type fileDoc = {
+    databaseConfig: DatabaseConfig;
+    gasTanks: GasTanksType;
+};
+
 export type SendGaslessTransactionParams = BiconomySendGaslessTransactionParams; // @TODO-update
 
 export type SendGaslessTransactionType = string; // @TODO-update
@@ -36,8 +41,8 @@ export type DatabaseConfig = {
 };
 
 export type SignedMessage = {
-    transactionHash: string,
-    r: string,
-    s: string,
-    v: number
-}
+    transactionHash: string;
+    r: string;
+    s: string;
+    v: number;
+};
