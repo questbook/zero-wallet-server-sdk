@@ -124,28 +124,12 @@ export class BiconomyRelayer implements BaseRelayer {
         populatedTx: string,
         targetContractAddress: string,
         zeroWalletAddress: string,
-        webHookAttributes: WebHookAttributesType
+        webHookAttributes: WebHookAttributesType,
+        scwAddress:string
     ) {
         // @TODO: add check for target contract address
 
         await this.#waitForBiconomyWalletClient();
-
-        const { doesWalletExist, walletAddress: scwAddress } =
-            await this.doesSCWExists(zeroWalletAddress);
-
-        if (!doesWalletExist) {
-            throw new Error(`SCW is not deployed for ${scwAddress}`);
-        }
-
-        if (
-            !(await this.#authorizer.isUserAuthorized(
-                webHookAttributes.signedNonce,
-                webHookAttributes.nonce,
-                zeroWalletAddress
-            ))
-        ) {
-            throw new Error('User is not authorized');
-        }
 
         const safeTXBody =
             await this.#biconomyWalletClient!.buildExecTransaction({
@@ -160,15 +144,7 @@ export class BiconomyRelayer implements BaseRelayer {
     async sendGaslessTransaction(
         params: BiconomySendGaslessTransactionParams
     ): Promise<SendGaslessTransactionType> {
-        if (
-            !(await this.#authorizer.isUserAuthorized(
-                params.webHookAttributes.signedNonce,
-                params.webHookAttributes.nonce,
-                params.zeroWalletAddress
-            ))
-        ) {
-            throw new Error('User is not authorized');
-        }
+        
 
         await this.#waitForBiconomyWalletClient();
 

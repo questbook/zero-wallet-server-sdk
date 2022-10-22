@@ -34,11 +34,51 @@ export class GasTank {
         this.#authorizer = new QuestbookAuthorizer(databaseConfig);
     }
 
+    async buildExecTransaction(
+        populatedTx: string,
+        targetContractAddress: string,
+        zeroWalletAddress: string,
+        webHookAttributes: WebHookAttributesType
+    ) {
+        if (
+            !(await this.#authorizer.isUserAuthorized(
+                webHookAttributes.signedNonce,
+                webHookAttributes.nonce,
+                zeroWalletAddress
+            ))
+        ) {
+            throw new Error('User is not authorized');
+        }
+
+        const { doesWalletExist, walletAddress: scwAddress } =
+            await this.doesProxyWalletExist(zeroWalletAddress);
+
+        if (!doesWalletExist) {
+            throw new Error(`SCW is not deployed for ${scwAddress}`);
+        }
+        return await this.#relayer.buildExecTransaction(
+            populatedTx,
+            targetContractAddress,
+            zeroWalletAddress,
+            webHookAttributes,
+            scwAddress
+        );
+    }
+
     async sendGaslessTransaction(
         params: SendGaslessTransactionParams
     ): Promise<SendGaslessTransactionType> {
+        if (
+            !(await this.#authorizer.isUserAuthorized(
+                params.webHookAttributes.signedNonce,
+                params.webHookAttributes.nonce,
+                params.zeroWalletAddress
+            ))
+        ) {
+            throw new Error('User is not authorized');
+        }
         // eslint-disable-line @typescript-eslint/no-explicit-any
-        return this.#relayer.sendGaslessTransaction(params);
+        return await this.#relayer.sendGaslessTransaction(params);
     }
 
     async doesProxyWalletExist(zeroWalletAddress: string): Promise<{
