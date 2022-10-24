@@ -21,7 +21,11 @@ export class GasTank {
     #relayer: BiconomyRelayer; // We can simply swap out biconomy by using a different relayer
     #authorizer: QuestbookAuthorizer; // We can change the authorizer by simply swapping out the QuestbookAuthorizer
 
-    constructor(gasTank: GasTankProps, databaseConfig: DatabaseConfig) {
+    constructor(
+        gasTank: GasTankProps,
+        databaseConfig: DatabaseConfig,
+        whiteList: string[]
+    ) {
         this.gasTankName = gasTank.name;
         this.chainId = gasTank.chainId;
         this.#relayer = new BiconomyRelayer({
@@ -31,7 +35,7 @@ export class GasTank {
             apiKey: gasTank.apiKey,
             providerURL: gasTank.providerURL
         });
-        this.#authorizer = new QuestbookAuthorizer(databaseConfig);
+        this.#authorizer = new QuestbookAuthorizer(databaseConfig, whiteList);
     }
 
     async buildExecTransaction(
@@ -56,6 +60,11 @@ export class GasTank {
         if (!doesWalletExist) {
             throw new Error(`SCW is not deployed for ${scwAddress}`);
         }
+        if (!this.#authorizer.isInWhiteList(targetContractAddress)) {
+            throw new Error(
+                'target contract is not included in the white List'
+            );
+        }
         return await this.#relayer.buildExecTransaction(
             populatedTx,
             targetContractAddress,
@@ -76,6 +85,11 @@ export class GasTank {
             ))
         ) {
             throw new Error('User is not authorized');
+        }
+        if (!this.#authorizer.isInWhiteList(params.safeTXBody.to)) {
+            throw new Error(
+                'target contract is not included in the white List'
+            );
         }
         // eslint-disable-line @typescript-eslint/no-explicit-any
         return await this.#relayer.sendGaslessTransaction(params);
