@@ -16,7 +16,6 @@ export type BiconomyRelayerProps = {
     apiKey: string;
     chainId: SupportedChainId;
     providerURL: string;
-    provider?: ZeroWalletProviderType;
 };
 
 export type BiconomyInitParams = {
@@ -97,7 +96,12 @@ export type BuildExecTransactionParams = {
     to: string;
     walletAddress: string;
 };
-
+export type BiconomyBuildTransactionParams ={
+    populatedTx: string;
+    targetContractAddress: string;
+    zeroWalletAddress: string;
+    webHookAttributes: WebHookAttributesType;
+}
 export type BuildExecTransactionType = {
     to: string;
     value: number;

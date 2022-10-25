@@ -2,11 +2,12 @@ import { ethers } from 'ethers';
 
 import { SupportedChainId } from '../constants/chains';
 import {
+    BuildTransactionParams,
     DatabaseConfig,
+    deployProxyWalletParams,
     GasTankProps,
     SendGaslessTransactionParams,
-    SendGaslessTransactionType,
-    WebHookAttributesType
+    SendGaslessTransactionType
 } from '../types';
 
 import QuestbookAuthorizer from './authorizers/QuestbookAuthorizer';
@@ -21,55 +22,48 @@ export class GasTank {
     #relayer: BiconomyRelayer; // We can simply swap out biconomy by using a different relayer
     #authorizer: QuestbookAuthorizer; // We can change the authorizer by simply swapping out the QuestbookAuthorizer
 
-    constructor(
-        gasTank: GasTankProps,
-        databaseConfig: DatabaseConfig,
-        whiteList: string[]
-    ) {
+    constructor(gasTank: GasTankProps) {
         this.gasTankName = gasTank.name;
         this.chainId = gasTank.chainId;
         this.#relayer = new BiconomyRelayer({
             name: gasTank.name,
             chainId: gasTank.chainId,
-            provider: new ethers.providers.JsonRpcProvider(gasTank.providerURL),
             apiKey: gasTank.apiKey,
             providerURL: gasTank.providerURL
         });
-        this.#authorizer = new QuestbookAuthorizer(databaseConfig, whiteList);
+        this.#authorizer = new QuestbookAuthorizer(
+            gasTank.databaseConfig,
+            gasTank.whiteList
+        );
     }
 
-    async buildExecTransaction(
-        populatedTx: string,
-        targetContractAddress: string,
-        zeroWalletAddress: string,
-        webHookAttributes: WebHookAttributesType
-    ) {
+    async buildExecTransaction(params: BuildTransactionParams) {
         if (
             !(await this.#authorizer.isUserAuthorized(
-                webHookAttributes.signedNonce,
-                webHookAttributes.nonce,
-                zeroWalletAddress
+                params.webHookAttributes.signedNonce,
+                params.webHookAttributes.nonce,
+                params.zeroWalletAddress
             ))
         ) {
             throw new Error('User is not authorized');
         }
 
         const { doesWalletExist, walletAddress: scwAddress } =
-            await this.doesProxyWalletExist(zeroWalletAddress);
+            await this.doesProxyWalletExist(params.zeroWalletAddress);
 
         if (!doesWalletExist) {
-            throw new Error(`SCW is not deployed for ${scwAddress}`);
+            throw new Error(
+                `SCW is not deployed for ${params.zeroWalletAddress}`
+            );
         }
-        if (!this.#authorizer.isInWhiteList(targetContractAddress)) {
+        if (!this.#authorizer.isInWhiteList(params.targetContractAddress)) {
             throw new Error(
                 'target contract is not included in the white List'
             );
         }
         return await this.#relayer.buildExecTransaction(
-            populatedTx,
-            targetContractAddress,
-            zeroWalletAddress,
-            webHookAttributes,
+            params.populatedTx,
+            params.targetContractAddress,
             scwAddress
         );
     }
@@ -102,20 +96,17 @@ export class GasTank {
         return await this.#relayer.doesSCWExists(zeroWalletAddress);
     }
 
-    async deployProxyWallet(
-        zeroWalletAddress: string,
-        webHookAttributes: WebHookAttributesType
-    ) {
+    async deployProxyWallet(params: deployProxyWalletParams) {
         if (
             !(await this.#authorizer.isUserAuthorized(
-                webHookAttributes.signedNonce,
-                webHookAttributes.nonce,
-                zeroWalletAddress
+                params.webHookAttributes.signedNonce,
+                params.webHookAttributes.nonce,
+                params.zeroWalletAddress
             ))
         ) {
             throw new Error('User is not authorized');
         }
-        return await this.#relayer.deploySCW(zeroWalletAddress);
+        return await this.#relayer.deploySCW(params.zeroWalletAddress);
     }
 
     public toString(): string {

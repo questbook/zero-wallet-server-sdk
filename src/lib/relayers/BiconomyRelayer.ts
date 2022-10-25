@@ -1,4 +1,5 @@
 import { Biconomy } from '@biconomy/mexa';
+import {ethers} from 'ethers'
 
 import { SupportedChainId } from '../../constants/chains';
 import {
@@ -15,6 +16,8 @@ import { delay } from '../../utils/global';
 import { getTransactionReceipt } from '../../utils/provider';
 import QuestbookAuthorizer from '../authorizers/QuestbookAuthorizer';
 
+
+
 import { BaseRelayer } from './BaseRelayer';
 export class BiconomyRelayer implements BaseRelayer {
     name = 'Biconomy';
@@ -26,11 +29,14 @@ export class BiconomyRelayer implements BaseRelayer {
     #biconomyLoading: Promise<void>;
 
     constructor(relayerProps: BiconomyRelayerProps) {
-        if (!relayerProps?.provider) {
-            throw new Error('provider is undefined');
-        }
+        
+        const provider = new ethers.providers.JsonRpcProvider(
+            relayerProps.providerURL
+        ) as ZeroWalletProviderType;
+        
+        
         this.chainId = relayerProps.chainId;
-        this.#provider = relayerProps.provider;
+        this.#provider = provider;
         this.#apiKey = relayerProps.apiKey;
 
         this.#biconomyLoading = this.initRelayer({
@@ -123,9 +129,7 @@ export class BiconomyRelayer implements BaseRelayer {
     async buildExecTransaction(
         populatedTx: string,
         targetContractAddress: string,
-        zeroWalletAddress: string,
-        webHookAttributes: WebHookAttributesType,
-        scwAddress:string
+        scwAddress: string
     ) {
         // @TODO: add check for target contract address
 
@@ -144,12 +148,7 @@ export class BiconomyRelayer implements BaseRelayer {
     async sendGaslessTransaction(
         params: BiconomySendGaslessTransactionParams
     ): Promise<SendGaslessTransactionType> {
-        
-
         await this.#waitForBiconomyWalletClient();
-
-        // @TODO: add check for target contract address
-
         const txHash =
             await this.#biconomyWalletClient!.sendBiconomyWalletTransaction({
                 execTransactionBody: params.safeTXBody,
