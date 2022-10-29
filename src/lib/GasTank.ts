@@ -37,7 +37,7 @@ export class GasTank {
         );
     }
 
-    async buildExecTransaction(params: BuildTransactionParams) {
+    async buildTransaction(params: BuildTransactionParams) {
         if (
             !(await this.#authorizer.isUserAuthorized(
                 params.webHookAttributes.signedNonce,
