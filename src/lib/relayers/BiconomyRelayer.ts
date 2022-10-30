@@ -1,5 +1,5 @@
 import { Biconomy } from '@biconomy/mexa';
-import {ethers} from 'ethers'
+import { ethers } from 'ethers';
 
 import { SupportedChainId } from '../../constants/chains';
 import {
@@ -16,8 +16,6 @@ import { delay } from '../../utils/global';
 import { getTransactionReceipt } from '../../utils/provider';
 import QuestbookAuthorizer from '../authorizers/QuestbookAuthorizer';
 
-
-
 import { BaseRelayer } from './BaseRelayer';
 export class BiconomyRelayer implements BaseRelayer {
     name = 'Biconomy';
@@ -29,12 +27,10 @@ export class BiconomyRelayer implements BaseRelayer {
     #biconomyLoading: Promise<void>;
 
     constructor(relayerProps: BiconomyRelayerProps) {
-        
         const provider = new ethers.providers.JsonRpcProvider(
             relayerProps.providerURL
         ) as ZeroWalletProviderType;
-        
-        
+
         this.chainId = relayerProps.chainId;
         this.#provider = provider;
         this.#apiKey = relayerProps.apiKey;
