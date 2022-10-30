@@ -42,7 +42,8 @@ export class GasTank {
             !(await this.#authorizer.isUserAuthorized(
                 params.webHookAttributes.signedNonce,
                 params.webHookAttributes.nonce,
-                params.zeroWalletAddress
+                params.zeroWalletAddress,
+                this.gasTankName
             ))
         ) {
             throw new Error('User is not authorized');
@@ -75,7 +76,8 @@ export class GasTank {
             !(await this.#authorizer.isUserAuthorized(
                 params.webHookAttributes.signedNonce,
                 params.webHookAttributes.nonce,
-                params.zeroWalletAddress
+                params.zeroWalletAddress,
+                this.gasTankName
             ))
         ) {
             throw new Error('User is not authorized');
@@ -101,7 +103,8 @@ export class GasTank {
             !(await this.#authorizer.isUserAuthorized(
                 params.webHookAttributes.signedNonce,
                 params.webHookAttributes.nonce,
-                params.zeroWalletAddress
+                params.zeroWalletAddress,
+                this.gasTankName
             ))
         ) {
             throw new Error('User is not authorized');
