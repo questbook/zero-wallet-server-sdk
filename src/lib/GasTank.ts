@@ -22,7 +22,7 @@ export class GasTank {
     #relayer: BiconomyRelayer; // We can simply swap out biconomy by using a different relayer
     #authorizer: QuestbookAuthorizer; // We can change the authorizer by simply swapping out the QuestbookAuthorizer
 
-    constructor(gasTank: GasTankProps, databaseConfig:DatabaseConfig) {
+    constructor(gasTank: GasTankProps, databaseConfig: DatabaseConfig) {
         this.gasTankName = gasTank.name;
         this.chainId = gasTank.chainId;
         this.#relayer = new BiconomyRelayer({
@@ -82,11 +82,21 @@ export class GasTank {
         ) {
             throw new Error('User is not authorized');
         }
+
+        const { doesWalletExist} =
+            await this.doesProxyWalletExist(params.zeroWalletAddress);
+        if (!doesWalletExist) {
+            throw new Error(
+                `SCW is not deployed for ${params.zeroWalletAddress}`
+            );
+        }
+        
         if (!this.#authorizer.isInWhiteList(params.safeTXBody.to)) {
             throw new Error(
                 'target contract is not included in the white List'
             );
         }
+        
         // eslint-disable-line @typescript-eslint/no-explicit-any
         return await this.#relayer.sendGaslessTransaction(params);
     }
@@ -110,6 +120,12 @@ export class GasTank {
             throw new Error('User is not authorized');
         }
         return await this.#relayer.deploySCW(params.zeroWalletAddress);
+    }
+    async getNonce(
+        address: string,
+        gasTankName: string
+    ): Promise<string | boolean> {
+        return await this.#authorizer.getNonce(address, gasTankName);
     }
 
     public toString(): string {

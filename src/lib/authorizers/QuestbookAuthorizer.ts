@@ -16,20 +16,28 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     #whiteList: Array<string>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     #loadingTableCreation: Promise<QueryResult<any>>;
+    #gasTankName: string;
 
-    constructor(databaseConfig: DatabaseConfig, whiteList: string[]) {
+    constructor(
+        databaseConfig: DatabaseConfig,
+        whiteList: string[],
+        gasTankName: string
+    ) {
         this.#pool = new Pool(databaseConfig);
 
         this.#loadingTableCreation = this.#query(createGaslessLoginTableQuery);
 
         this.#whiteList = whiteList;
+
+        this.#gasTankName = gasTankName;
     }
+
     isInWhiteList(address: string): boolean {
         return this.#whiteList.includes(address);
     }
 
-    async addAuthorizedUser(address: string, gasTankName: string) {
-        if (await this.#doesAddressExist(address, gasTankName)) {
+    async addAuthorizedUser(address: string) {
+        if (await this.#doesAddressExist(address)) {
             throw new Error(
                 'User already registered! Please use refreshUserAuthorization instead.'
             );
@@ -43,13 +51,13 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
                 address,
                 newNonce,
                 NONCE_EXPIRATION + new Date().getTime() / 1000,
-                gasTankName
+                this.#gasTankName
             ]
         );
     }
 
-    async refreshUserAuthorization(address: string, gasTankName: string) {
-        if (!(await this.#doesAddressExist(address, gasTankName))) {
+    async refreshUserAuthorization(address: string) {
+        if (!(await this.#doesAddressExist(address))) {
             throw new Error('User not Registered!');
         }
 
@@ -57,7 +65,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
         await this.#query(
             'UPDATE gasless_login SET nonce = $1 WHERE address = $2 AND gasTankID = $3;',
-            [newNonce, address, gasTankName]
+            [newNonce, address, this.#gasTankName]
         );
 
         return newNonce;
@@ -66,8 +74,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     async isUserAuthorized(
         signedNonce: SignedMessage,
         nonce: string,
-        webwallet_address: string,
-        gasTankName: string
+        webwallet_address: string
     ) {
         const address = this.#recoverAddress(signedNonce);
 
@@ -79,8 +86,9 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
             return false;
         }
 
-        return await this.#retrieveValidRecord(address, nonce, gasTankName);
+        return await this.#retrieveValidRecord(address, nonce);
     }
+
     async #getDatabaseReady() {
         await this.#loadingTableCreation;
         try {
@@ -102,14 +110,10 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         }
     }
 
-    async #retrieveValidRecord(
-        address: string,
-        nonce: string,
-        gasTankName: string
-    ) {
+    async #retrieveValidRecord(address: string, nonce: string) {
         const results = await this.#query(
             'SELECT * FROM gasless_login WHERE address = $1 AND nonce = $2 ANd gasTankID = $3;',
-            [address, nonce, gasTankName]
+            [address, nonce, this.#gasTankName]
         );
 
         if (results.rows.length === 0) {
@@ -123,10 +127,10 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         return expiration > curDate;
     }
 
-    async #doesAddressExist(address: string, gasTankName: string) {
+    async #doesAddressExist(address: string) {
         const results = await this.#query(
             'SELECT * FROM gasless_login WHERE address = $1 AND gasTankID= $2 ;',
-            [address, gasTankName]
+            [address, this.#gasTankName]
         );
 
         if (results.rows.length === 0) {
@@ -136,13 +140,12 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         return true;
     }
 
-    async #getNonce(
-        address: string,
-        gasTankName: string
+    async getNonce(
+        address: string
     ): Promise<boolean | string> {
         const results = await this.#query(
             'SELECT nonce, expiration FROM gasless_login WHERE address = $1 AND gasTankID = $2 ORDER BY expiration DESC',
-            [address, gasTankName]
+            [address, this.#gasTankName]
         );
 
         if (results.rows.length === 0) {
