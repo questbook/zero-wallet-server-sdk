@@ -1,4 +1,3 @@
-
 import { SupportedChainId } from '../constants/chains';
 import {
     BuildTransactionParams,
@@ -36,13 +35,12 @@ export class GasTank {
             this.gasTankName
         );
     }
-
     async buildTransaction(params: BuildTransactionParams) {
         if (
             !(await this.#authorizer.isUserAuthorized(
                 params.webHookAttributes.signedNonce,
                 params.webHookAttributes.nonce,
-                params.zeroWalletAddress,
+                params.zeroWalletAddress
             ))
         ) {
             throw new Error('User is not authorized');
@@ -119,12 +117,16 @@ export class GasTank {
         }
         return await this.#relayer.deploySCW(params.zeroWalletAddress);
     }
-    async getNonce(
-        address: string
-    ): Promise<string | boolean> {
+    async getNonce(address: string): Promise<string | boolean> {
         return await this.#authorizer.getNonce(address);
     }
-
+    async deleteUser(address: string) {
+        try {
+            await this.#authorizer.deleteUser(address);
+        } catch (e) {
+            throw new Error(e as string);
+        }
+    }
     public toString(): string {
         return `GasTank: ${this.gasTankName}, chainId: ${this.chainId}`;
     }

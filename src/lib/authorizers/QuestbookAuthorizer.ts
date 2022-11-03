@@ -55,6 +55,16 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
             ]
         );
     }
+    async deleteUser(address: string) {
+
+        if(!await this.#doesAddressExist(address)){
+            throw new Error('User does not exist!');
+        }
+        await this.#query(
+            'DELETE FROM gasless_login Where address = $1 AND gasTankID = $2 ;',
+            [address, this.#gasTankName]
+        );
+    }
 
     async refreshUserAuthorization(address: string) {
         if (!(await this.#doesAddressExist(address))) {
@@ -101,7 +111,6 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async #query(query: string, values?: Array<any>): Promise<any> {
         await this.#getDatabaseReady();
-
         try {
             const res = await this.#pool.query(query, values);
             return res;
@@ -140,9 +149,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         return true;
     }
 
-    async getNonce(
-        address: string
-    ): Promise<boolean | string> {
+    async getNonce(address: string): Promise<boolean | string> {
         const results = await this.#query(
             'SELECT nonce, expiration FROM gasless_login WHERE address = $1 AND gasTankID = $2 ORDER BY expiration DESC',
             [address, this.#gasTankName]
