@@ -3,36 +3,59 @@ import { GasTanksType } from '../types';
 import { GasTankProps } from '../types';
 
 export function isGasTankProps(obj: any): obj is GasTankProps {
-    if (typeof obj.name !== 'string') return false;
-    if (typeof obj.apiKey !== 'string') return false;
-    if (typeof obj.name !== 'string') return false;
-    if (obj.chainId === undefined) return false;
-    if (typeof obj.providerURL !== 'string') return false;
-    if (!obj?.whiteList?.length) return false;
+    let isTypeCorrect = true;
+    if (typeof obj?.name !== 'string') isTypeCorrect = false;
+    if (typeof obj?.apiKey !== 'string') isTypeCorrect = false;
+    if (typeof obj?.name !== 'string') isTypeCorrect = false;
+    if (obj?.chainId === undefined) isTypeCorrect = false;
+    if (typeof obj?.providerURL !== 'string') isTypeCorrect = false;
+    if (!obj?.whiteList?.length) isTypeCorrect = false;
+    if (!isTypeCorrect) {
+        throw new Error('gasTank in yml file does not match the required structure');
+    }
     return true;
 }
 
 function isGasTanksType(obj: any): obj is GasTanksType {
-    if (obj.length === undefined) return false;
+    let isTypeCorrect = true;
+    if (obj?.length === undefined) isTypeCorrect = false;
     try {
         for (let i = 0; i < obj.length; i++) {
-            if (!isGasTankProps(obj[i])) return false;
+            isGasTankProps(obj[i]);
         }
     } catch {
-        return false;
+        throw new Error('gasTank in yml file does not match the required structure');
+    }
+    if (!isTypeCorrect) {
+        throw new Error('gasTank in yml file does not match the required structure');
     }
     return true;
 }
 function isDatabaseConfig(obj: any): obj is DatabaseConfig {
-    if (typeof obj.user !== 'string') return false;
-    if (typeof obj.host !=='string') return false;
-    if (typeof obj.database !== 'string') return false;
-    if (typeof obj.password !== 'string') return false;
-    if (typeof obj.port !== 'number') return false;
+    let isTypeCorrect = true;
+    if (typeof obj?.user !== 'string') isTypeCorrect = false;
+    if (typeof obj?.host !== 'string') isTypeCorrect = false;
+    if (typeof obj?.database !== 'string') isTypeCorrect = false;
+    if (typeof obj?.password !== 'string') isTypeCorrect = false;
+    if (typeof obj?.port !== 'number') isTypeCorrect = false;
+    if (!isTypeCorrect) {
+        throw new Error('databaseConfig in yml file does not match the required structure');
+    }
     return true;
 }
 
 export function isFileDoc(obj: any): obj is fileDoc {
-    if (obj.whiteList === undefined) return false;
-    return isDatabaseConfig(obj.databaseConfig) && isGasTanksType(obj.gasTanks);
+    if (
+        obj?.gasTanks === undefined ||
+        obj?.databaseConfig === undefined
+    ) {
+        throw new Error('yml file does not match the required structure');
+    }
+    try {
+        isGasTanksType(obj.gasTanks);
+        isDatabaseConfig(obj.databaseConfig);
+    } catch (e) {
+        throw new Error(e as string);
+    }
+    return true;
 }

@@ -16,23 +16,34 @@ export class ZeroWallet {
 
         try {
             doc = load(readFileSync(path, 'utf8'));
+            isFileDoc(doc);
+            if (!isFileDoc(doc)) {
+                throw new Error(
+                    'the yml file does not match the required structure'
+                );
+            }
         } catch (e) {
             throw new Error(e as string);
         }
-        if(!isFileDoc(doc)){
-            throw new Error("the yml file does not match the required structure")
-        }
+
+
         this.#databaseConfig = doc.databaseConfig;
         const gasTanks: GasTanksType = doc.gasTanks;
 
         if (gasTanks) {
             gasTanks.forEach((gasTank: GasTankProps) => {
-                this.#gasTanks[gasTank.apiKey] = new GasTank(gasTank, this.#databaseConfig);
+                if (this.#gasTanks[gasTank.name] !== undefined) {
+                    throw new Error('gas tank name should be unique');
+                }
+                this.#gasTanks[gasTank.name] = new GasTank(
+                    gasTank,
+                    this.#databaseConfig
+                );
             });
         }
     }
 
-    getGasTank = (apiKey: string): GasTank => {
-        return this.#gasTanks[apiKey];
+    getGasTank = (name: string): GasTank => {
+        return this.#gasTanks[name];
     };
 }

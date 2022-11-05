@@ -21,47 +21,27 @@ const test = anyTest as TestFn<{
 }>;
 
 test.beforeEach((t) => {
-    t.context.providers = {
-        5: new ethers.providers.JsonRpcProvider(
-            `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`
-        )
-    } as ZeroWalletProvidersType;
-
-    t.context.testApiKey = process.env.TEST_API_KEY ?? 'TEST_API_KEY';
+    t.context.testApiKey =  'TEST_API_KEY';
     t.context.gasTanks = [
         {
             name: 'testGasTankName',
             apiKey: t.context.testApiKey,
             chainId: 5,
-            provider: t.context.providers[5]
+            providerURL: `testingURL`
         }
     ] as GasTanksType;
-
-    t.context.zeroWallet = new ZeroWallet(
-        {} as DatabaseConfig,
-        t.context.gasTanks
-    );
 });
 
-test('Create Zero Wallet and check gastank getter', async (t) => {
-    t.deepEqual(
-        t.context.zeroWallet.getGasTank(t.context.testApiKey),
-        new GasTank(t.context.gasTanks[0], {} as DatabaseConfig)
-    );
-});
+// test('Create Zero Wallet and check gastank getter', async (t) => {
+//     t.deepEqual(
+//         t.context.zeroWallet.getGasTank(t.context.testApiKey),
+//         new GasTank(t.context.gasTanks[0], {} as DatabaseConfig)
+//     );
+// });
 
-test('Create Zero Wallet and check gastank setter', async (t) => {
-    const newGasTank: GasTankProps = {
-        name: 'newTestDappName',
-        apiKey: t.context.testApiKey,
-        chainId: 5,
-        provider: t.context.providers[5]
-    };
+test('Create Zero Wallet and check gasTank setter', async (t) => {
+    const zeroWallet = new ZeroWallet('src/test/example.yml');
+    const gasTank = zeroWallet.getGasTank('testApiKey');
 
-    t.context.zeroWallet.addGasTank(newGasTank);
-
-    t.deepEqual(
-        t.context.zeroWallet.getGasTank(t.context.testApiKey),
-        new GasTank(newGasTank, {} as DatabaseConfig)
-    );
+    t.deepEqual(gasTank, t.context.gasTanks[0]);
 });
