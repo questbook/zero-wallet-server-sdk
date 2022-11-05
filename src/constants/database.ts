@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS gasless_login ( \
     address VARCHAR ( 70 ) NOT NULL, \
     nonce VARCHAR ( 256 ) NOT NULL, \
     expiration INT NOT NULL ,\
-    gasTankID VarCHAR NOT NULL,\
+    gasTankID VARCHAR (256) NOT NULL,\
 ); \
 ';
 

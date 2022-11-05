@@ -14,4 +14,5 @@ export interface BaseAuthorizer {
         nonce: string,
         gasTankName: string
     ) => Promise<boolean>;
+    deleteUser: (address: string) => Promise<void>;
 }

@@ -15,21 +15,21 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     #pool: Pool;
     #whiteList: Array<string>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    #loadingTableCreation: Promise<QueryResult<any>>;
-    #gasTankName: string;
+    #loadingTableCreation: Promise<void>;
+    #gasTankID: string;
 
     constructor(
         databaseConfig: DatabaseConfig,
         whiteList: string[],
-        gasTankName: string
+        gasTankID: string
     ) {
         this.#pool = new Pool(databaseConfig);
 
-        this.#loadingTableCreation = this.#query(createGaslessLoginTableQuery);
+        this.#loadingTableCreation = this.#getDatabaseReady();
 
         this.#whiteList = whiteList;
 
-        this.#gasTankName = gasTankName;
+        this.#gasTankID = gasTankID;
     }
 
     isInWhiteList(address: string): boolean {
@@ -51,18 +51,17 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
                 address,
                 newNonce,
                 NONCE_EXPIRATION + new Date().getTime() / 1000,
-                this.#gasTankName
+                this.#gasTankID
             ]
         );
     }
-    async deleteUser(address: string) {
-
-        if(!await this.#doesAddressExist(address)){
+    async deleteUser(address: string): Promise<void> {
+        if (!(await this.#doesAddressExist(address))) {
             throw new Error('User does not exist!');
         }
         await this.#query(
-            'DELETE FROM gasless_login Where address = $1 AND gasTankID = $2 ;',
-            [address, this.#gasTankName]
+            'DELETE FROM gasless_login WHERE address = $1 AND gasTankID = $2 ;',
+            [address, this.#gasTankID]
         );
     }
 
@@ -75,7 +74,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
         await this.#query(
             'UPDATE gasless_login SET nonce = $1 WHERE address = $2 AND gasTankID = $3;',
-            [newNonce, address, this.#gasTankName]
+            [newNonce, address, this.#gasTankID]
         );
 
         return newNonce;
@@ -100,12 +99,13 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     }
 
     async #getDatabaseReady() {
-        await this.#loadingTableCreation;
         try {
+            await this.#query(createGaslessLoginTableQuery);
             await this.#pool.query(createIndex);
         } catch (err) {
             throw new Error(err as string);
         }
+        return;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -122,7 +122,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     async #retrieveValidRecord(address: string, nonce: string) {
         const results = await this.#query(
             'SELECT * FROM gasless_login WHERE address = $1 AND nonce = $2 ANd gasTankID = $3;',
-            [address, nonce, this.#gasTankName]
+            [address, nonce, this.#gasTankID]
         );
 
         if (results.rows.length === 0) {
@@ -139,7 +139,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     async #doesAddressExist(address: string) {
         const results = await this.#query(
             'SELECT * FROM gasless_login WHERE address = $1 AND gasTankID= $2 ;',
-            [address, this.#gasTankName]
+            [address, this.#gasTankID]
         );
 
         if (results.rows.length === 0) {
@@ -152,7 +152,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     async getNonce(address: string): Promise<boolean | string> {
         const results = await this.#query(
             'SELECT nonce, expiration FROM gasless_login WHERE address = $1 AND gasTankID = $2 ORDER BY expiration DESC',
-            [address, this.#gasTankName]
+            [address, this.#gasTankID]
         );
 
         if (results.rows.length === 0) {
