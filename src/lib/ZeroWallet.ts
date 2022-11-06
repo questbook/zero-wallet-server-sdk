@@ -26,6 +26,7 @@ export class ZeroWallet {
             throw new Error(e as string);
         }
 
+        
 
         this.#databaseConfig = doc.databaseConfig;
         const gasTanks: GasTanksType = doc.gasTanks;

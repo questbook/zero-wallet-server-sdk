@@ -19,29 +19,13 @@ const test = anyTest as TestFn<{
     gasTanks: GasTanksType;
     testApiKey: string;
 }>;
-
-test.beforeEach((t) => {
-    t.context.testApiKey =  'TEST_API_KEY';
-    t.context.gasTanks = [
-        {
-            name: 'testGasTankName',
-            apiKey: t.context.testApiKey,
-            chainId: 5,
-            providerURL: `testingURL`
-        }
-    ] as GasTanksType;
+test('Create Zero Wallet and check addAuthorizedUser and doesUserExist', async (t) => {
+    const zeroWallet = new ZeroWallet('./testing.yml');
+    const gasTank = zeroWallet.getGasTank('testGasTankName');
+    const address = '0x0000000000000000000000000000000000000000';
+    t.deepEqual(await gasTank.doesUserExist(address), false);
+    await gasTank.addAuthorizedUser(address);
+    t.deepEqual(await gasTank.doesUserExist(address), true);
+    t.deepEqual(true,true);
 });
 
-// test('Create Zero Wallet and check gastank getter', async (t) => {
-//     t.deepEqual(
-//         t.context.zeroWallet.getGasTank(t.context.testApiKey),
-//         new GasTank(t.context.gasTanks[0], {} as DatabaseConfig)
-//     );
-// });
-
-test('Create Zero Wallet and check gasTank setter', async (t) => {
-    const zeroWallet = new ZeroWallet('src/test/example.yml');
-    const gasTank = zeroWallet.getGasTank('testApiKey');
-
-    t.deepEqual(gasTank, t.context.gasTanks[0]);
-});

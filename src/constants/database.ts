@@ -6,9 +6,9 @@ CREATE TABLE IF NOT EXISTS gasless_login ( \
     address VARCHAR ( 70 ) NOT NULL, \
     nonce VARCHAR ( 256 ) NOT NULL, \
     expiration INT NOT NULL ,\
-    gasTankID VARCHAR (256) NOT NULL,\
+    gasTankID VARCHAR (256) NOT NULL\
 ); \
 ';
 
 export const createIndex = 
-'CREATE INDEX name ON gasless_login USING HASH (address,gasTankID);'
+'CREATE INDEX w ON gasless_login USING HASH (address);'

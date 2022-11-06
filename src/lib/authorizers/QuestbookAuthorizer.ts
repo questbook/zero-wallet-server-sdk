@@ -15,7 +15,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     #pool: Pool;
     #whiteList: Array<string>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    #loadingTableCreation: Promise<void>;
+    #loadingTableCreationWithIndex: Promise<void>;
     #gasTankID: string;
 
     constructor(
@@ -25,19 +25,22 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     ) {
         this.#pool = new Pool(databaseConfig);
 
-        this.#loadingTableCreation = this.#getDatabaseReady();
+        this.#loadingTableCreationWithIndex = this.getDatabaseReadyWithIndex();
 
         this.#whiteList = whiteList;
 
         this.#gasTankID = gasTankID;
     }
+    // async delete() {
+    //     await this.#pool.query('DROP TABLE gasless_login;');
+    // }
 
-    isInWhiteList(address: string): boolean {
-        return this.#whiteList.includes(address);
+    isInWhiteList(contractAddress: string): boolean {
+        return this.#whiteList.includes(contractAddress);
     }
 
     async addAuthorizedUser(address: string) {
-        if (await this.#doesAddressExist(address)) {
+        if (await this.doesAddressExist(address)) {
             throw new Error(
                 'User already registered! Please use refreshUserAuthorization instead.'
             );
@@ -45,18 +48,23 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
         const newNonce = this.#createNonce(100);
 
-        await this.#query(
-            `INSERT INTO gasless_login VALUES ($1, $2, $3, $4);`,
-            [
-                address,
-                newNonce,
-                NONCE_EXPIRATION + new Date().getTime() / 1000,
-                this.#gasTankID
-            ]
-        );
+        try {
+            await this.#query(
+                `INSERT INTO gasless_login VALUES ($1, $2, $3, $4);`,
+                [
+                    address,
+                    newNonce,
+                    NONCE_EXPIRATION + Math.trunc(new Date().getTime() / 1000),
+                    this.#gasTankID
+                ]
+            );
+        } catch (err) {
+            throw new Error(err as string);
+        }
     }
+
     async deleteUser(address: string): Promise<void> {
-        if (!(await this.#doesAddressExist(address))) {
+        if (!(await this.doesAddressExist(address))) {
             throw new Error('User does not exist!');
         }
         await this.#query(
@@ -66,7 +74,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     }
 
     async refreshUserAuthorization(address: string) {
-        if (!(await this.#doesAddressExist(address))) {
+        if (!(await this.doesAddressExist(address))) {
             throw new Error('User not Registered!');
         }
 
@@ -98,9 +106,15 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         return await this.#retrieveValidRecord(address, nonce);
     }
 
-    async #getDatabaseReady() {
+    async getDatabaseReadyWithIndex() {
+        // try {
+        //     await this.delete();
+        // } catch {
+        //     console.log('table does not exist');
+        // }
+
         try {
-            await this.#query(createGaslessLoginTableQuery);
+            await this.#pool.query(createGaslessLoginTableQuery);
             await this.#pool.query(createIndex);
         } catch (err) {
             throw new Error(err as string);
@@ -110,8 +124,8 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async #query(query: string, values?: Array<any>): Promise<any> {
-        await this.#getDatabaseReady();
         try {
+            await this.#loadingTableCreationWithIndex;
             const res = await this.#pool.query(query, values);
             return res;
         } catch (err) {
@@ -136,7 +150,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         return expiration > curDate;
     }
 
-    async #doesAddressExist(address: string) {
+    async doesAddressExist(address: string): Promise<boolean> {
         const results = await this.#query(
             'SELECT * FROM gasless_login WHERE address = $1 AND gasTankID= $2 ;',
             [address, this.#gasTankID]
