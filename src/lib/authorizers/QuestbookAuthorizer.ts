@@ -32,7 +32,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         this.#gasTankID = gasTankID;
     }
     // async delete() {
-    //     await this.#pool.query('DROP TABLE gasless_login;');
+    //     await this.#pool.query('DROP TABLE IF EXISTS gasless_login;');
     // }
 
     isInWhiteList(contractAddress: string): boolean {
@@ -115,7 +115,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
         try {
             await this.#pool.query(createGaslessLoginTableQuery);
-            await this.#pool.query(createIndex);
+            // await this.#pool.query(createIndex);
         } catch (err) {
             throw new Error(err as string);
         }
