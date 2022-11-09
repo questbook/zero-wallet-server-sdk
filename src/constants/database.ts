@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS gasless_login ( \
 ); \
 ';
 
-export const createIndex = 
-'CREATE INDEX w ON gasless_login USING HASH (address);'
+export const createIndex =
+    'CREATE INDEX w ON gasless_login USING HASH (address);';

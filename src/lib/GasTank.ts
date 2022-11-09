@@ -60,8 +60,8 @@ export class GasTank {
         }
     }
 
-    async isInWhiteList(contractAddress: string): Promise<boolean> {
-        return await this.authorizer.isInWhiteList(contractAddress);
+     isInWhiteList(contractAddress: string): boolean {
+        return  this.authorizer.isInWhiteList(contractAddress);
     }
 
     async buildTransaction(params: BuildTransactionParams) {
@@ -123,7 +123,6 @@ export class GasTank {
             );
         }
 
-        // eslint-disable-line @typescript-eslint/no-explicit-any
         return await this.#relayer.sendGaslessTransaction(params);
     }
 

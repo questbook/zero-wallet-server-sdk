@@ -11,7 +11,9 @@ export function isGasTankProps(obj: any): obj is GasTankProps {
     if (typeof obj?.providerURL !== 'string') isTypeCorrect = false;
     if (!obj?.whiteList?.length) isTypeCorrect = false;
     if (!isTypeCorrect) {
-        throw new Error('gasTank in yml file does not match the required structure');
+        throw new Error(
+            'gasTank in yml file does not match the required structure'
+        );
     }
     return true;
 }
@@ -24,10 +26,14 @@ function isGasTanksType(obj: any): obj is GasTanksType {
             isGasTankProps(obj[i]);
         }
     } catch {
-        throw new Error('gasTank in yml file does not match the required structure');
+        throw new Error(
+            'gasTank in yml file does not match the required structure'
+        );
     }
     if (!isTypeCorrect) {
-        throw new Error('gasTank in yml file does not match the required structure');
+        throw new Error(
+            'gasTank in yml file does not match the required structure'
+        );
     }
     return true;
 }
@@ -39,16 +45,15 @@ function isDatabaseConfig(obj: any): obj is DatabaseConfig {
     if (typeof obj?.password !== 'string') isTypeCorrect = false;
     if (typeof obj?.port !== 'number') isTypeCorrect = false;
     if (!isTypeCorrect) {
-        throw new Error('databaseConfig in yml file does not match the required structure');
+        throw new Error(
+            'databaseConfig in yml file does not match the required structure'
+        );
     }
     return true;
 }
 
 export function isFileDoc(obj: any): obj is fileDoc {
-    if (
-        obj?.gasTanks === undefined ||
-        obj?.databaseConfig === undefined
-    ) {
+    if (obj?.gasTanks === undefined || obj?.databaseConfig === undefined) {
         throw new Error('yml file does not match the required structure');
     }
     try {

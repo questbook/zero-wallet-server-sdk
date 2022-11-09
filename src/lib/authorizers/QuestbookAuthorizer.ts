@@ -14,7 +14,6 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     name = 'Questbook Auhorizer';
     #pool: Pool;
     #whiteList: Array<string>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     #loadingTableCreationWithIndex: Promise<void>;
     #gasTankID: string;
 
@@ -31,9 +30,13 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
         this.#gasTankID = gasTankID;
     }
-    // async delete() {
-    //     await this.#pool.query('DROP TABLE IF EXISTS gasless_login;');
-    // }
+    async delete() {
+        try{
+        await this.#pool.query('DROP TABLE IF EXISTS gasless_login;');
+        }catch(err){
+            console.log(err);
+        }
+    }
 
     isInWhiteList(contractAddress: string): boolean {
         return this.#whiteList.includes(contractAddress);
@@ -107,17 +110,22 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     }
 
     async getDatabaseReadyWithIndex() {
-        // try {
-        //     await this.delete();
-        // } catch {
-        //     console.log('table does not exist');
-        // }
+        try {
+            await this.delete();
+        } catch {
+            console.log('table does not exist');
+        }
 
         try {
             await this.#pool.query(createGaslessLoginTableQuery);
-            // await this.#pool.query(createIndex);
+            
         } catch (err) {
             throw new Error(err as string);
+        }
+        try{
+            await this.#pool.query(createIndex);
+        }catch(err){
+            console.log(err);
         }
         return;
     }
