@@ -14,7 +14,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     name = 'Questbook Auhorizer';
     #pool: Pool;
     #whiteList: Array<string>;
-    #loadingTableCreationWithIndex: Promise<void>;
+    loadingTableCreationWithIndex: Promise<void>;
     #gasTankID: string;
 
     constructor(
@@ -22,18 +22,23 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         whiteList: string[],
         gasTankID: string
     ) {
-        this.#pool = new Pool(databaseConfig);
-
-        this.#loadingTableCreationWithIndex = this.getDatabaseReadyWithIndex();
-
+        const zob = {
+            ...databaseConfig,
+            max: 20,
+            min: 2
+        }
+        this.#pool = new Pool(zob);
+        console.log("fdfdfd", this.#pool.totalCount)
+        this.loadingTableCreationWithIndex = this.getDatabaseReadyWithIndex();
         this.#whiteList = whiteList;
 
         this.#gasTankID = gasTankID;
     }
     async delete() {
-        try{
-        await this.#pool.query('DROP TABLE IF EXISTS gasless_login;');
-        }catch(err){
+        console.log('deleting table');
+        try {
+            await this.#pool.query('DROP TABLE IF EXISTS gasless_login;');
+        } catch (err) {
             console.log(err);
         }
     }
@@ -110,30 +115,35 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     }
 
     async getDatabaseReadyWithIndex() {
-        try {
-            await this.delete();
-        } catch {
-            console.log('table does not exist');
-        }
+        console.log('creating table');
+        // try {
+        //     await this.delete();
+        // } catch {
+        //     console.log('table does not exist');
+        // }
 
         try {
-            await this.#pool.query(createGaslessLoginTableQuery);
-            
+            const client = await this.#pool.connect();
+            await client.query(createGaslessLoginTableQuery);
+            client.release()
+           
         } catch (err) {
-            throw new Error(err as string);
-        }
-        try{
-            await this.#pool.query(createIndex);
-        }catch(err){
             console.log(err);
+            // throw new Error(err as string);
         }
+        // try {
+        //     await this.#pool.query(createIndex);
+        // } catch (err) {
+        //     console.log(err);
+        // }
         return;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async #query(query: string, values?: Array<any>): Promise<any> {
+        console.log('querying');
         try {
-            await this.#loadingTableCreationWithIndex;
+            await this.loadingTableCreationWithIndex;
             const res = await this.#pool.query(query, values);
             return res;
         } catch (err) {
