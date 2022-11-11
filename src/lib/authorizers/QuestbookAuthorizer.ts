@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { Pool, QueryResult } from 'pg';
+import { Client, Pool, QueryResult } from 'pg';
 
 import {
     createGaslessLoginTableQuery,
@@ -16,30 +16,28 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     #whiteList: Array<string>;
     loadingTableCreationWithIndex: Promise<void>;
     #gasTankID: string;
+    databaseConfig: DatabaseConfig;
 
     constructor(
         databaseConfig: DatabaseConfig,
         whiteList: string[],
         gasTankID: string
     ) {
-        const zob = {
-            ...databaseConfig,
-            max: 20,
-            min: 2
-        }
-        this.#pool = new Pool(zob);
-        console.log("fdfdfd", this.#pool.totalCount)
+        this.databaseConfig = databaseConfig;
+        this.#pool = new Pool(databaseConfig);
+        
         this.loadingTableCreationWithIndex = this.getDatabaseReadyWithIndex();
         this.#whiteList = whiteList;
 
         this.#gasTankID = gasTankID;
     }
+
     async delete() {
-        console.log('deleting table');
         try {
-            await this.#pool.query('DROP TABLE IF EXISTS gasless_login;');
+            await this.#unsafeQuery('DROP INDEX IF EXISTS w;');
+            await this.#unsafeQuery('DROP TABLE IF EXISTS gasless_login;');
         } catch (err) {
-            console.log(err);
+            throw new Error(err as string);
         }
     }
 
@@ -115,36 +113,42 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     }
 
     async getDatabaseReadyWithIndex() {
-        console.log('creating table');
-        // try {
-        //     await this.delete();
-        // } catch {
-        //     console.log('table does not exist');
-        // }
+        try {
+            await this.delete();
+        } catch {
+            throw new Error("Couldn't delete table");
+        }
 
         try {
-            const client = await this.#pool.connect();
-            await client.query(createGaslessLoginTableQuery);
-            client.release()
-           
+            await this.#unsafeQuery(createGaslessLoginTableQuery);
+        } catch (err) {
+            throw new Error(err as string);
+        }
+        try {
+            await new Promise((resolve, reject) => {
+                setTimeout(resolve, 3000);
+            })
+            await this.#unsafeQuery(createIndex);
         } catch (err) {
             console.log(err);
-            // throw new Error(err as string);
         }
-        // try {
-        //     await this.#pool.query(createIndex);
-        // } catch (err) {
-        //     console.log(err);
-        // }
+
         return;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async #query(query: string, values?: Array<any>): Promise<any> {
-        console.log('querying');
+        await this.loadingTableCreationWithIndex;
+        return await this.#unsafeQuery(query, values);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async #unsafeQuery(query: string, values?: Array<any>): Promise<any> {
         try {
-            await this.loadingTableCreationWithIndex;
-            const res = await this.#pool.query(query, values);
+            const pool = new Pool(this.databaseConfig);
+            const res = await pool.query(query, values);
+            await pool.end();
+
             return res;
         } catch (err) {
             throw new Error(err as string);
