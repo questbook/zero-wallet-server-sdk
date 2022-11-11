@@ -22,25 +22,14 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         whiteList: string[],
         gasTankID: string
     ) {
-        const zob = {
-            ...databaseConfig,
-            max: 20,
-            min: 2
-        }
-        this.#pool = new Pool(zob);
-        console.log("fdfdfd", this.#pool.totalCount)
+        this.#pool = new Pool(databaseConfig);
         this.loadingTableCreationWithIndex = this.getDatabaseReadyWithIndex();
         this.#whiteList = whiteList;
 
         this.#gasTankID = gasTankID;
     }
-    async delete() {
-        console.log('deleting table');
-        try {
-            await this.#pool.query('DROP TABLE IF EXISTS gasless_login;');
-        } catch (err) {
-            console.log(err);
-        }
+    async endConnection () {
+        await this.#pool.end();
     }
 
     isInWhiteList(contractAddress: string): boolean {
@@ -116,25 +105,15 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
     async getDatabaseReadyWithIndex() {
         console.log('creating table');
-        // try {
-        //     await this.delete();
-        // } catch {
-        //     console.log('table does not exist');
-        // }
-
         try {
-            const client = await this.#pool.connect();
-            await client.query(createGaslessLoginTableQuery);
-            client.release()
-           
+            await this.#pool.query(createGaslessLoginTableQuery);
         } catch (err) {
-            console.log(err);
-            // throw new Error(err as string);
+            throw new Error(err as string);
         }
         // try {
         //     await this.#pool.query(createIndex);
         // } catch (err) {
-        //     console.log(err);
+        //     throw new Error(err as string);
         // }
         return;
     }

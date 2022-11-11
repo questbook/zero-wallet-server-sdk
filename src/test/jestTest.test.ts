@@ -1,59 +1,97 @@
-import { OpcodeDescriptionsUniqueBCH } from '@bitauth/libauth';
-import { describe, expect, test } from '@jest/globals';
-
+import { WalletImportFormatError } from '@bitauth/libauth';
+import { afterAll, describe, expect, test } from '@jest/globals';
+import { ethers } from 'ethers';
+import { GasTank } from '../lib/GasTank';
 import { ZeroWallet } from '../lib/ZeroWallet';
 
-const sum = (a: number, b: number) => a + b;
 const constants = {
-    address: '0x0000000000000000000000000000000000000000'
+    wallet: ethers.Wallet.createRandom(),
+    zeroWallet: new ZeroWallet('./testing.yml')
 };
+afterAll(() => {
+    constants.zeroWallet
+        .getGasTank('testGasTankName')
+        .authorizer.endConnection();
+    // constants.zeroWallet
+    //     .getGasTank('testGasTankName')
+    //     .authorizer.delete();
+});
 
-describe('sum module', () => {
-    test('Create Zero Wallet and check addAuthorizedUser and doesUserExist functions', async () => {
-
-        const zeroWallet = new ZeroWallet('./testing.yml');
-        const gasTank = zeroWallet.getGasTank('testGasTankName');
+describe('testing authorizer', () => {
+    test('check addAuthorizedUser and doesUserExist functions', async () => {
+        const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
 
         await gasTank.authorizer.loadingTableCreationWithIndex;
-        console.log(await gasTank.doesUserExist(constants.address));
-        expect(await gasTank.doesUserExist(constants.address)).toBe(false);
+        expect(await gasTank.doesUserExist(constants.wallet.address)).toBe(
+            false
+        );
 
-        // await gasTank.addAuthorizedUser(constants.address);
-        // expect(await gasTank.doesUserExist(constants.address)).toBe(true);
+        await gasTank.addAuthorizedUser(constants.wallet.address);
+        expect(await gasTank.doesUserExist(constants.wallet.address)).toBe(
+            true
+        );
     });
-    // test('Create Zero Wallet and check deleteUser function', async () => {
-    //     const zeroWallet = new ZeroWallet('./testing.yml');
-    //     const gasTank = zeroWallet.getGasTank('testGasTankName');
+    test('check deleteUser function', async () => {
+        const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
 
-    //     await gasTank.addAuthorizedUser(constants.address);
-    //     expect(await gasTank.doesUserExist(constants.address)).toBe(true);
-    //     await gasTank.deleteUser(constants.address);
-    //     expect(await gasTank.doesUserExist(constants.address)).toBe(false);
-    // });
-    // test('Create Zero Wallet and check isInWhiteList function', async () => {
-    //     const zeroWallet = new ZeroWallet('./testing.yml');
-    //     const gasTank = zeroWallet.getGasTank('testGasTankName');
+        expect(await gasTank.doesUserExist(constants.wallet.address)).toBe(
+            true
+        );
+        await gasTank.deleteUser(constants.wallet.address);
+        expect(await gasTank.doesUserExist(constants.wallet.address)).toBe(
+            false
+        );
+    });
+    test('check isInWhiteList function', async () => {
+        const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
 
-    //     const contractAddress = 'contract-address';
-    //     const contractAddress2 = 'contract-address2';
-    //     expect( gasTank.isInWhiteList(contractAddress2)).toBe(false);
-    //     expect( gasTank.isInWhiteList(contractAddress)).toBe(true);
-    //     await gasTank.authorizer.delete();
-    // });
-    // test('Create Zero Wallet and check getNonce function', async () => {
-    //     const zeroWallet = new ZeroWallet('./testing.yml');
-    //     const gasTank = zeroWallet.getGasTank('testGasTankName');
+        const contractAddress = 'contract-address';
+        const contractAddress2 = 'contract-address2';
+        expect(gasTank.isInWhiteList(contractAddress2)).toBe(false);
+        expect(gasTank.isInWhiteList(contractAddress)).toBe(true);
+    });
 
-    //     await gasTank.addAuthorizedUser(constants.address);
-    //     const nonce = await gasTank.getNonce(constants.address);
-    //     expect(typeof nonce).toBe('string');
-    //     if (typeof nonce !== 'string') {
-    //         return;
-    //     }
-    //     expect(nonce.length).toBe(100);
-    //     const characters =
-    //     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    //     expect(nonce).toMatch(new RegExp(`[${characters}]+`));
-    // });
-          
+    test('check getNonce function', async () => {
+        const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
+
+        await gasTank.addAuthorizedUser(constants.wallet.address);
+        const nonce = await gasTank.getNonce(constants.wallet.address);
+        await gasTank.deleteUser(constants.wallet.address);
+        expect(typeof nonce).toBe('string');
+        if (typeof nonce !== 'string') {
+            return;
+        }
+        expect(nonce.length).toBe(100);
+        const characters =
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        expect(nonce).toMatch(new RegExp(`[${characters}]+`));
+    });
+
+    test('check isUserAuthorized function', async () => {
+        const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
+
+        await gasTank.addAuthorizedUser(constants.wallet.address);
+        const nonce = await gasTank.getNonce(constants.wallet.address);
+        expect(nonce).not.toBe(false);
+        if (typeof nonce !== 'string') {
+            return;
+        }
+        const signature = await constants.wallet.signMessage(nonce);
+        const nonceSig = ethers.utils.splitSignature(signature);
+        const nonceHash = ethers.utils.hashMessage(nonce);
+        const signedNonce = {
+            r: nonceSig.r,
+            s: nonceSig.s,
+            v: nonceSig.v,
+            transactionHash: nonceHash
+        };
+
+        expect(
+            await gasTank.authorizer.isUserAuthorized(
+                signedNonce,
+                nonce,
+                constants.wallet.address
+            )
+        ).toBe(true);
+    });
 });

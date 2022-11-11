@@ -35,7 +35,6 @@ export class GasTank {
             this.gasTankName
         );
     }
-
     async addAuthorizedUser(address: string) {
         try {
             await this.authorizer.addAuthorizedUser(address);
