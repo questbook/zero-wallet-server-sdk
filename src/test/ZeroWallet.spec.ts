@@ -27,7 +27,6 @@ test.beforeEach((t) => {
         {
             name: 'testGasTankName',
             apiKey: t.context.testApiKey,
-            fundingKey: 'testFundingKey',
             chainId: 5,
             provider: t.context.providers[5]
         }
@@ -47,7 +46,6 @@ test('Create Zero Wallet and check gastank setter', async (t) => {
     const newGasTank: GasTankProps = {
         name: 'newTestDappName',
         apiKey: t.context.testApiKey,
-        fundingKey: 'newTestFundingKey',
         chainId: 5,
         provider: t.context.providers[5]
     };

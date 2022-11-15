@@ -12,22 +12,28 @@ import { BaseAuthorizer } from './BaseAuthorizer';
 export default class QuestbookAuthorizer implements BaseAuthorizer {
     name = 'Questbook Auhorizer';
     #pool: Pool;
-
+    #whiteList: Array<string>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     #loadingTableCreation: Promise<QueryResult<any>>;
 
-    constructor(databaseConfig: DatabaseConfig) {
+    constructor(databaseConfig: DatabaseConfig, whiteList: string[]) {
         this.#pool = new Pool(databaseConfig);
 
         this.#loadingTableCreation = this.#query(createGaslessLoginTableQuery);
+
+        this.#whiteList = whiteList;
+    }
+    isInWhiteList(address: string): boolean {
+        return this.#whiteList.includes(address);
     }
 
     async addAuthorizedUser(address: string) {
-
-        if(await this.#doesAddressExist(address)) {
-            throw new Error('User already registered! Please use refreshUserAuthorization instead.')
+        if (await this.#doesAddressExist(address)) {
+            throw new Error(
+                'User already registered! Please use refreshUserAuthorization instead.'
+            );
         }
-        
+
         const newNonce = this.#createNonce(100);
 
         await this.#query(`INSERT INTO gasless_login VALUES ($1, $2, $3);`, [
@@ -52,23 +58,26 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         return newNonce;
     }
 
-    async isUserAuthorized(signedNonce: SignedMessage, nonce: string, webwallet_address: string) {
-        const address = this.#recoverAddress(signedNonce)
-    
-        if(address !== webwallet_address) {
-            return false
+    async isUserAuthorized(
+        signedNonce: SignedMessage,
+        nonce: string,
+        webwallet_address: string
+    ) {
+        const address = this.#recoverAddress(signedNonce);
+
+        if (address !== webwallet_address) {
+            return false;
         }
-    
-        if(ethers.utils.hashMessage(nonce) !== signedNonce.transactionHash) {
-            return false
+
+        if (ethers.utils.hashMessage(nonce) !== signedNonce.transactionHash) {
+            return false;
         }
-    
-        return await this.#retrieveValidRecord(address, nonce)
+
+        return await this.#retrieveValidRecord(address, nonce);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async #query(query: string, values?: Array<any>): Promise<any> {
-
         await this.#loadingTableCreation;
 
         try {
@@ -150,10 +159,8 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
                 s: signedMessage.s,
                 v: signedMessage.v
             }
-        )
-        
-        return address
+        );
+
+        return address;
     }
-
-
 }

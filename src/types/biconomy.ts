@@ -14,9 +14,8 @@ export type SignedTransactionType = {
 export type BiconomyRelayerProps = {
     name: string;
     apiKey: string;
-    fundingKey: string;
     chainId: SupportedChainId;
-    provider: ZeroWalletProviderType;
+    providerURL: string;
 };
 
 export type BiconomyInitParams = {
@@ -97,7 +96,12 @@ export type BuildExecTransactionParams = {
     to: string;
     walletAddress: string;
 };
-
+export type BiconomyBuildTransactionParams ={
+    populatedTx: string;
+    targetContractAddress: string;
+    zeroWalletAddress: string;
+    webHookAttributes: WebHookAttributesType;
+}
 export type BuildExecTransactionType = {
     to: string;
     value: number;

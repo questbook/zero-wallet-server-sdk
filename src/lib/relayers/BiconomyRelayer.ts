@@ -1,4 +1,5 @@
 import { Biconomy } from '@biconomy/mexa';
+import {ethers} from 'ethers'
 
 import { SupportedChainId } from '../../constants/chains';
 import {
@@ -15,32 +16,32 @@ import { delay } from '../../utils/global';
 import { getTransactionReceipt } from '../../utils/provider';
 import QuestbookAuthorizer from '../authorizers/QuestbookAuthorizer';
 
+
+
 import { BaseRelayer } from './BaseRelayer';
 export class BiconomyRelayer implements BaseRelayer {
     name = 'Biconomy';
     chainId: SupportedChainId;
     #provider: ZeroWalletProviderType;
     #apiKey: string;
-    #fundingKey: string;
     #biconomy = {} as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     #biconomyWalletClient?: BiconomyWalletClientType;
     #biconomyLoading: Promise<void>;
-    #authorizer: QuestbookAuthorizer; // We can change the authorizer by simply swapping out the QuestbookAuthorizer
 
-    constructor(
-        relayerProps: BiconomyRelayerProps,
-        databaseConfig: DatabaseConfig
-    ) {
+    constructor(relayerProps: BiconomyRelayerProps) {
+        
+        const provider = new ethers.providers.JsonRpcProvider(
+            relayerProps.providerURL
+        ) as ZeroWalletProviderType;
+        
+        
         this.chainId = relayerProps.chainId;
-        this.#provider = relayerProps.provider;
+        this.#provider = provider;
         this.#apiKey = relayerProps.apiKey;
-        this.#fundingKey = relayerProps.fundingKey;
 
         this.#biconomyLoading = this.initRelayer({
             provider: this.#provider
         } as InitBiconomyRelayerProps);
-
-        this.#authorizer = new QuestbookAuthorizer(databaseConfig);
     }
 
     async #waitForBiconomyWalletClient() {
@@ -51,7 +52,6 @@ export class BiconomyRelayer implements BaseRelayer {
         this.#biconomy = new Biconomy(params.provider, {
             apiKey: this.#apiKey
         });
-
 
         const _biconomyWalletClient =
             await new Promise<BiconomyWalletClientType>((resolve, reject) => {
@@ -81,7 +81,10 @@ export class BiconomyRelayer implements BaseRelayer {
         this.#biconomyWalletClient = _biconomyWalletClient;
     }
 
-    async doesSCWExists(zeroWalletAddress: string) {
+    async doesSCWExists(zeroWalletAddress: string): Promise<{
+        doesWalletExist: boolean;
+        walletAddress: string;
+    }> {
         await this.#waitForBiconomyWalletClient();
 
         const { doesWalletExist, walletAddress } =
@@ -89,11 +92,13 @@ export class BiconomyRelayer implements BaseRelayer {
                 eoa: zeroWalletAddress
             });
 
-        return { doesWalletExist, walletAddress} ;
+        return { doesWalletExist, walletAddress };
     }
 
     async #unsafeDeploySCW(zeroWalletAddress: string): Promise<string> {
-        const { doesWalletExist, walletAddress } = await this.doesSCWExists(zeroWalletAddress);
+        const { doesWalletExist, walletAddress } = await this.doesSCWExists(
+            zeroWalletAddress
+        );
 
         let scwAddress: string;
 
@@ -113,17 +118,8 @@ export class BiconomyRelayer implements BaseRelayer {
         return scwAddress;
     }
 
-    async deploySCW(
-        zeroWalletAddress: string,
-        webHookAttributes: WebHookAttributesType
-    ) {
-        // @TODO: add check for target contract address
-
+    async deploySCW(zeroWalletAddress: string) {
         await this.#waitForBiconomyWalletClient();
-
-        if(!(await this.#authorizer.isUserAuthorized(webHookAttributes.signedNonce, webHookAttributes.nonce, zeroWalletAddress))){
-            throw new Error('User is not authorized');
-        }
 
         const scwAddress = await this.#unsafeDeploySCW(zeroWalletAddress);
 
@@ -133,23 +129,11 @@ export class BiconomyRelayer implements BaseRelayer {
     async buildExecTransaction(
         populatedTx: string,
         targetContractAddress: string,
-        zeroWalletAddress: string,
-        webHookAttributes: WebHookAttributesType
+        scwAddress: string
     ) {
-        
         // @TODO: add check for target contract address
 
         await this.#waitForBiconomyWalletClient();
-
-        const { doesWalletExist, walletAddress: scwAddress } = await this.doesSCWExists(zeroWalletAddress);
-        
-        if(!doesWalletExist) {
-            throw new Error(`SCW is not deployed for ${scwAddress}`);
-        }
-
-        if(!(await this.#authorizer.isUserAuthorized(webHookAttributes.signedNonce, webHookAttributes.nonce, zeroWalletAddress))){
-            throw new Error('User is not authorized');
-        }
 
         const safeTXBody =
             await this.#biconomyWalletClient!.buildExecTransaction({
@@ -164,15 +148,7 @@ export class BiconomyRelayer implements BaseRelayer {
     async sendGaslessTransaction(
         params: BiconomySendGaslessTransactionParams
     ): Promise<SendGaslessTransactionType> {
-        
-        if(!(await this.#authorizer.isUserAuthorized(params.webHookAttributes.signedNonce, params.webHookAttributes.nonce, params.zeroWalletAddress))){
-            throw new Error('User is not authorized');
-        }
-
         await this.#waitForBiconomyWalletClient();
-
-        // @TODO: add check for target contract address
-
         const txHash =
             await this.#biconomyWalletClient!.sendBiconomyWalletTransaction({
                 execTransactionBody: params.safeTXBody,
@@ -182,6 +158,4 @@ export class BiconomyRelayer implements BaseRelayer {
 
         return txHash;
     }
-
-    // @TODO: use fundingKey to fund the gastank
 }
