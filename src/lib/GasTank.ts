@@ -1,5 +1,6 @@
 import { SupportedChainId } from '../constants/chains';
 import {
+    BuildExecTransactionType,
     BuildTransactionParams,
     DatabaseConfig,
     deployProxyWalletParams,
@@ -59,11 +60,14 @@ export class GasTank {
         }
     }
 
-     isInWhiteList(contractAddress: string): boolean {
-        return  this.authorizer.isInWhiteList(contractAddress);
+    isInWhiteList(contractAddress: string): boolean {
+        return this.authorizer.isInWhiteList(contractAddress);
     }
 
-    async buildTransaction(params: BuildTransactionParams) {
+    async buildTransaction(params: BuildTransactionParams): Promise<{
+        scwAddress: string;
+        safeTXBody: BuildExecTransactionType;
+    }> {
         if (
             !(await this.authorizer.isUserAuthorized(
                 params.webHookAttributes.signedNonce,
@@ -132,7 +136,7 @@ export class GasTank {
         return await this.#relayer.doesSCWExists(zeroWalletAddress);
     }
 
-    async deployProxyWallet(params: deployProxyWalletParams) {
+    async deployProxyWallet(params: deployProxyWalletParams): Promise<string> {
         if (
             !(await this.authorizer.isUserAuthorized(
                 params.webHookAttributes.signedNonce,
@@ -144,6 +148,7 @@ export class GasTank {
         }
         return await this.#relayer.deploySCW(params.zeroWalletAddress);
     }
+
     async getNonce(address: string): Promise<string | boolean> {
         return await this.authorizer.getNonce(address);
     }
