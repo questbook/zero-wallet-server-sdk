@@ -1,7 +1,6 @@
-import { WalletImportFormatError } from '@bitauth/libauth';
 import { afterAll, describe, expect, test } from '@jest/globals';
 import { ethers } from 'ethers';
-import { GasTank } from '../lib/GasTank';
+
 import { ZeroWallet } from '../lib/ZeroWallet';
 
 const constants = {

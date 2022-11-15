@@ -59,8 +59,8 @@ export class GasTank {
         }
     }
 
-     isInWhiteList(contractAddress: string): boolean {
-        return  this.authorizer.isInWhiteList(contractAddress);
+    isInWhiteList(contractAddress: string): boolean {
+        return this.authorizer.isInWhiteList(contractAddress);
     }
 
     async buildTransaction(params: BuildTransactionParams) {

@@ -1,9 +1,8 @@
 import { ethers } from 'ethers';
-import { Pool, QueryResult } from 'pg';
+import { Pool } from 'pg';
 
 import {
     createGaslessLoginTableQuery,
-    createIndex,
     NONCE_EXPIRATION
 } from '../../constants/database';
 import { DatabaseConfig, SignedMessage } from '../../types';
@@ -28,7 +27,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
         this.#gasTankID = gasTankID;
     }
-    async endConnection () {
+    async endConnection() {
         await this.#pool.end();
     }
 

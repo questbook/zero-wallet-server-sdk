@@ -6,15 +6,12 @@ import {
     BiconomyRelayerProps,
     BiconomySendGaslessTransactionParams,
     BiconomyWalletClientType,
-    DatabaseConfig,
     InitBiconomyRelayerProps,
     SendGaslessTransactionType,
-    WebHookAttributesType,
     ZeroWalletProviderType
 } from '../../types';
 import { delay } from '../../utils/global';
 import { getTransactionReceipt } from '../../utils/provider';
-import QuestbookAuthorizer from '../authorizers/QuestbookAuthorizer';
 
 import { BaseRelayer } from './BaseRelayer';
 export class BiconomyRelayer implements BaseRelayer {

@@ -10,5 +10,5 @@ export interface BaseRelayer {
     initRelayer(params: any): Promise<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     sendGaslessTransaction(
         params: SendGaslessTransactionParams
-    ): Promise<SendGaslessTransactionType>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    ): Promise<SendGaslessTransactionType>;
 }

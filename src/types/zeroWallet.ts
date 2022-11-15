@@ -4,7 +4,6 @@ import { SupportedChainId } from '../constants/chains';
 
 import {
     BiconomyBuildTransactionParams,
-    BiconomyRelayerProps,
     BiconomySendGaslessTransactionParams,
     InitBiconomyRelayerProps,
     InitBiconomyRelayerType,
