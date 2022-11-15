@@ -1,5 +1,3 @@
-import { ethers } from 'ethers';
-
 import { SupportedChainId } from '../constants/chains';
 import {
     BuildTransactionParams,
@@ -20,9 +18,9 @@ export class GasTank {
 
     // private fields
     #relayer: BiconomyRelayer; // We can simply swap out biconomy by using a different relayer
-    #authorizer: QuestbookAuthorizer; // We can change the authorizer by simply swapping out the QuestbookAuthorizer
+    authorizer: QuestbookAuthorizer; // We can change the authorizer by simply swapping out the QuestbookAuthorizer
 
-    constructor(gasTank: GasTankProps, databaseConfig:DatabaseConfig) {
+    constructor(gasTank: GasTankProps, databaseConfig: DatabaseConfig) {
         this.gasTankName = gasTank.name;
         this.chainId = gasTank.chainId;
         this.#relayer = new BiconomyRelayer({
@@ -31,15 +29,43 @@ export class GasTank {
             apiKey: gasTank.apiKey,
             providerURL: gasTank.providerURL
         });
-        this.#authorizer = new QuestbookAuthorizer(
+        this.authorizer = new QuestbookAuthorizer(
             databaseConfig,
-            gasTank.whiteList
+            gasTank.whiteList,
+            this.gasTankName
         );
+    }
+    async addAuthorizedUser(address: string) {
+        try {
+            await this.authorizer.addAuthorizedUser(address);
+        } catch (e) {
+            throw new Error(e as string);
+        }
+    }
+
+    async deleteUser(address: string) {
+        try {
+            await this.authorizer.deleteUser(address);
+        } catch (e) {
+            throw new Error(e as string);
+        }
+    }
+
+    async doesUserExist(address: string): Promise<boolean> {
+        try {
+            return await this.authorizer.doesAddressExist(address);
+        } catch (e) {
+            throw new Error(e as string);
+        }
+    }
+
+     isInWhiteList(contractAddress: string): boolean {
+        return  this.authorizer.isInWhiteList(contractAddress);
     }
 
     async buildTransaction(params: BuildTransactionParams) {
         if (
-            !(await this.#authorizer.isUserAuthorized(
+            !(await this.authorizer.isUserAuthorized(
                 params.webHookAttributes.signedNonce,
                 params.webHookAttributes.nonce,
                 params.zeroWalletAddress
@@ -56,7 +82,7 @@ export class GasTank {
                 `SCW is not deployed for ${params.zeroWalletAddress}`
             );
         }
-        if (!this.#authorizer.isInWhiteList(params.targetContractAddress)) {
+        if (!this.authorizer.isInWhiteList(params.targetContractAddress)) {
             throw new Error(
                 'target contract is not included in the white List'
             );
@@ -72,7 +98,7 @@ export class GasTank {
         params: SendGaslessTransactionParams
     ): Promise<SendGaslessTransactionType> {
         if (
-            !(await this.#authorizer.isUserAuthorized(
+            !(await this.authorizer.isUserAuthorized(
                 params.webHookAttributes.signedNonce,
                 params.webHookAttributes.nonce,
                 params.zeroWalletAddress
@@ -80,12 +106,22 @@ export class GasTank {
         ) {
             throw new Error('User is not authorized');
         }
-        if (!this.#authorizer.isInWhiteList(params.safeTXBody.to)) {
+
+        const { doesWalletExist } = await this.doesProxyWalletExist(
+            params.zeroWalletAddress
+        );
+        if (!doesWalletExist) {
+            throw new Error(
+                `SCW is not deployed for ${params.zeroWalletAddress}`
+            );
+        }
+
+        if (!this.authorizer.isInWhiteList(params.safeTXBody.to)) {
             throw new Error(
                 'target contract is not included in the white List'
             );
         }
-        // eslint-disable-line @typescript-eslint/no-explicit-any
+
         return await this.#relayer.sendGaslessTransaction(params);
     }
 
@@ -98,7 +134,7 @@ export class GasTank {
 
     async deployProxyWallet(params: deployProxyWalletParams) {
         if (
-            !(await this.#authorizer.isUserAuthorized(
+            !(await this.authorizer.isUserAuthorized(
                 params.webHookAttributes.signedNonce,
                 params.webHookAttributes.nonce,
                 params.zeroWalletAddress
@@ -107,6 +143,9 @@ export class GasTank {
             throw new Error('User is not authorized');
         }
         return await this.#relayer.deploySCW(params.zeroWalletAddress);
+    }
+    async getNonce(address: string): Promise<string | boolean> {
+        return await this.authorizer.getNonce(address);
     }
 
     public toString(): string {

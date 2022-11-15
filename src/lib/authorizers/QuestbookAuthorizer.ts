@@ -3,6 +3,7 @@ import { Pool, QueryResult } from 'pg';
 
 import {
     createGaslessLoginTableQuery,
+    createIndex,
     NONCE_EXPIRATION
 } from '../../constants/database';
 import { DatabaseConfig, SignedMessage } from '../../types';
@@ -13,22 +14,30 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     name = 'Questbook Auhorizer';
     #pool: Pool;
     #whiteList: Array<string>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    #loadingTableCreation: Promise<QueryResult<any>>;
+    loadingTableCreationWithIndex: Promise<void>;
+    #gasTankID: string;
 
-    constructor(databaseConfig: DatabaseConfig, whiteList: string[]) {
+    constructor(
+        databaseConfig: DatabaseConfig,
+        whiteList: string[],
+        gasTankID: string
+    ) {
         this.#pool = new Pool(databaseConfig);
-
-        this.#loadingTableCreation = this.#query(createGaslessLoginTableQuery);
-
+        this.loadingTableCreationWithIndex = this.getDatabaseReadyWithIndex();
         this.#whiteList = whiteList;
+
+        this.#gasTankID = gasTankID;
     }
-    isInWhiteList(address: string): boolean {
-        return this.#whiteList.includes(address);
+    async endConnection () {
+        await this.#pool.end();
+    }
+
+    isInWhiteList(contractAddress: string): boolean {
+        return this.#whiteList.includes(contractAddress);
     }
 
     async addAuthorizedUser(address: string) {
-        if (await this.#doesAddressExist(address)) {
+        if (await this.doesAddressExist(address)) {
             throw new Error(
                 'User already registered! Please use refreshUserAuthorization instead.'
             );
@@ -36,23 +45,41 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
         const newNonce = this.#createNonce(100);
 
-        await this.#query(`INSERT INTO gasless_login VALUES ($1, $2, $3);`, [
-            address,
-            newNonce,
-            NONCE_EXPIRATION + new Date().getTime() / 1000
-        ]);
+        try {
+            await this.#query(
+                `INSERT INTO gasless_login VALUES ($1, $2, $3, $4);`,
+                [
+                    address,
+                    newNonce,
+                    NONCE_EXPIRATION + Math.trunc(new Date().getTime() / 1000),
+                    this.#gasTankID
+                ]
+            );
+        } catch (err) {
+            throw new Error(err as string);
+        }
+    }
+
+    async deleteUser(address: string): Promise<void> {
+        if (!(await this.doesAddressExist(address))) {
+            throw new Error('User does not exist!');
+        }
+        await this.#query(
+            'DELETE FROM gasless_login WHERE address = $1 AND gasTankID = $2 ;',
+            [address, this.#gasTankID]
+        );
     }
 
     async refreshUserAuthorization(address: string) {
-        if (!(await this.#doesAddressExist(address))) {
+        if (!(await this.doesAddressExist(address))) {
             throw new Error('User not Registered!');
         }
 
         const newNonce = this.#createNonce(100);
 
         await this.#query(
-            'UPDATE gasless_login SET nonce = $1 WHERE address = $2;',
-            [newNonce, address]
+            'UPDATE gasless_login SET nonce = $1 WHERE address = $2 AND gasTankID = $3;',
+            [newNonce, address, this.#gasTankID]
         );
 
         return newNonce;
@@ -76,11 +103,26 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         return await this.#retrieveValidRecord(address, nonce);
     }
 
+    async getDatabaseReadyWithIndex() {
+        console.log('creating table');
+        try {
+            await this.#pool.query(createGaslessLoginTableQuery);
+        } catch (err) {
+            throw new Error(err as string);
+        }
+        // try {
+        //     await this.#pool.query(createIndex);
+        // } catch (err) {
+        //     throw new Error(err as string);
+        // }
+        return;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async #query(query: string, values?: Array<any>): Promise<any> {
-        await this.#loadingTableCreation;
-
+        console.log('querying');
         try {
+            await this.loadingTableCreationWithIndex;
             const res = await this.#pool.query(query, values);
             return res;
         } catch (err) {
@@ -90,8 +132,8 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
     async #retrieveValidRecord(address: string, nonce: string) {
         const results = await this.#query(
-            'SELECT * FROM gasless_login WHERE address = $1 AND nonce = $2;',
-            [address, nonce]
+            'SELECT * FROM gasless_login WHERE address = $1 AND nonce = $2 ANd gasTankID = $3;',
+            [address, nonce, this.#gasTankID]
         );
 
         if (results.rows.length === 0) {
@@ -105,10 +147,10 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         return expiration > curDate;
     }
 
-    async #doesAddressExist(address: string) {
+    async doesAddressExist(address: string): Promise<boolean> {
         const results = await this.#query(
-            'SELECT * FROM gasless_login WHERE address = $1;',
-            [address]
+            'SELECT * FROM gasless_login WHERE address = $1 AND gasTankID= $2 ;',
+            [address, this.#gasTankID]
         );
 
         if (results.rows.length === 0) {
@@ -118,10 +160,10 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         return true;
     }
 
-    async #getNonce(address: string): Promise<boolean | string> {
+    async getNonce(address: string): Promise<boolean | string> {
         const results = await this.#query(
-            'SELECT nonce, expiration FROM gasless_login WHERE address = $1 ORDER BY expiration DESC',
-            [address]
+            'SELECT nonce, expiration FROM gasless_login WHERE address = $1 AND gasTankID = $2 ORDER BY expiration DESC',
+            [address, this.#gasTankID]
         );
 
         if (results.rows.length === 0) {

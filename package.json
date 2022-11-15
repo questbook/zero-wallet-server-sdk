@@ -15,13 +15,13 @@
     "fix": "run-s fix:*",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:lint": "eslint src --ext .ts --fix",
-    "test": "run-s build test:*",
+    "test": "run-s test:*",
     "test:build": "run-p build:*",
     "test:lint": "eslint src --ext .ts",
     "test:prettier": "prettier \"src/**/*.ts\" --list-different",
-    "test:unit": "nyc ava src/**/*.spec.ts",
+    "test:unit": "jest src/**/*.test.ts --runInBand",
     "watch:build": "tsc -p tsconfig.json -w",
-    "watch:test": "ava --watch",
+    "watch:test": "jest --watch",
     "cov": "run-s build test:unit cov:html cov:lcov && open-cli coverage/index.html",
     "cov:html": "nyc report --reporter=html",
     "cov:lcov": "nyc report --reporter=lcov",
@@ -47,11 +47,14 @@
     "pg": "^8.8.0"
   },
   "devDependencies": {
-    "@ava/typescript": "^3.0.1",
+    "@babel/core": "^7.20.2",
+    "@babel/preset-env": "^7.20.2",
+    "@babel/preset-typescript": "^7.18.6",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@types/jest": "^29.2.2",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
-    "ava": "^4.3.3",
+    "babel-jest": "^29.3.1",
     "codecov": "^3.5.0",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^7.8.0",
@@ -60,43 +63,25 @@
     "eslint-plugin-functional": "^3.0.2",
     "eslint-plugin-import": "^2.22.0",
     "gh-pages": "^3.1.0",
+    "jest": "^29.3.1",
     "npm-run-all": "^4.1.5",
-    "nyc": "^15.1.0",
     "open-cli": "^6.0.1",
     "prettier": "^2.1.1",
     "standard-version": "^9.0.0",
+    "ts-jest": "^29.0.3",
     "ts-node": "^10.9.1",
-    "typedoc": "^0.19.0",
     "typescript": "^4.0.2"
   },
   "files": [
     "build/main",
     "build/module",
+    "babel.config.js",
     "!**/*.spec.*",
     "!**/*.json",
     "CHANGELOG.md",
     "LICENSE",
     "README.md"
   ],
-  "ava": {
-    "require": [
-      "ts-node/register"
-    ],
-    "failFast": true,
-    "timeout": "60s",
-    "typescript": {
-      "extensions": [
-        "ts"
-      ],
-      "rewritePaths": {
-        "src/": "build/main/"
-      },
-      "compile": "tsc"
-    },
-    "files": [
-      "./src/**/*.spec.ts"
-    ]
-  },
   "config": {
     "commitizen": {
       "path": "cz-conventional-changelog"
@@ -113,11 +98,5 @@
     "parser": "typescript",
     "embeddedLanguageFormatting": "auto",
     "singleAttributePerLine": false
-  },
-  "nyc": {
-    "extends": "@istanbuljs/nyc-config-typescript",
-    "exclude": [
-      "**/*.spec.js"
-    ]
   }
 }
