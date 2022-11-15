@@ -3,7 +3,12 @@ import { ethers } from 'ethers';
 
 import { GasTank } from '../lib/GasTank';
 import { ZeroWallet } from '../lib/ZeroWallet';
-import { DatabaseConfig, GasTankProps, GasTanksType, ZeroWalletProvidersType } from '../types';
+import {
+    DatabaseConfig,
+    GasTankProps,
+    GasTanksType,
+    ZeroWalletProvidersType
+} from '../types';
 import { configEnv } from '../utils/global';
 
 configEnv();
@@ -32,7 +37,10 @@ test.beforeEach((t) => {
         }
     ] as GasTanksType;
 
-    t.context.zeroWallet = new ZeroWallet({} as DatabaseConfig, t.context.gasTanks);
+    t.context.zeroWallet = new ZeroWallet(
+        {} as DatabaseConfig,
+        t.context.gasTanks
+    );
 });
 
 test('Create Zero Wallet and check gastank getter', async (t) => {

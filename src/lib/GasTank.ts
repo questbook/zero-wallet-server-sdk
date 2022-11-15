@@ -22,7 +22,7 @@ export class GasTank {
     #relayer: BiconomyRelayer; // We can simply swap out biconomy by using a different relayer
     #authorizer: QuestbookAuthorizer; // We can change the authorizer by simply swapping out the QuestbookAuthorizer
 
-    constructor(gasTank: GasTankProps) {
+    constructor(gasTank: GasTankProps, databaseConfig:DatabaseConfig) {
         this.gasTankName = gasTank.name;
         this.chainId = gasTank.chainId;
         this.#relayer = new BiconomyRelayer({
@@ -32,7 +32,7 @@ export class GasTank {
             providerURL: gasTank.providerURL
         });
         this.#authorizer = new QuestbookAuthorizer(
-            gasTank.databaseConfig,
+            databaseConfig,
             gasTank.whiteList
         );
     }

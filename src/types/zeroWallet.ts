@@ -22,16 +22,14 @@ export type GasTankProps = {
     apiKey: string;
     chainId: SupportedChainId;
     providerURL: string;
-    databaseConfig: DatabaseConfig,
-    whiteList: string[]
-}
+    whiteList: Array<string>;
+};
 
 export type GasTanksType = Array<GasTankProps>;
 
 export type fileDoc = {
     databaseConfig: DatabaseConfig;
     gasTanks: GasTanksType;
-    whiteList:Array<string>;
 };
 
 export type SendGaslessTransactionParams = BiconomySendGaslessTransactionParams; // @TODO-update
@@ -47,7 +45,7 @@ export type BuildTransactionParams = BiconomyBuildTransactionParams;
 export type deployProxyWalletParams = {
     zeroWalletAddress: string;
     webHookAttributes: WebHookAttributesType;
-}
+};
 export type DatabaseConfig = {
     user: string;
     host: string;
@@ -55,7 +53,6 @@ export type DatabaseConfig = {
     password: string;
     port: number;
 };
-
 
 export type SignedMessage = {
     transactionHash: string;
