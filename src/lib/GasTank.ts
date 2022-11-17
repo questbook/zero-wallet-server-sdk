@@ -127,8 +127,7 @@ export class GasTank {
 
     async doesProxyWalletExist(zeroWalletAddress: string): Promise<{
         doesWalletExist: boolean;
-        walletAddress: string;
-    }> {
+        walletAddress: string; }> {
         return await this.#relayer.doesSCWExists(zeroWalletAddress);
     }
 
@@ -144,6 +143,7 @@ export class GasTank {
         }
         return await this.#relayer.deploySCW(params.zeroWalletAddress);
     }
+    
     async getNonce(address: string): Promise<string | boolean> {
         return await this.authorizer.getNonce(address);
     }

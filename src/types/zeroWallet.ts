@@ -5,9 +5,9 @@ import { SupportedChainId } from '../constants/chains';
 import {
     BiconomyBuildTransactionParams,
     BiconomySendGaslessTransactionParams,
+    DeployWebHookAttributesType,
     InitBiconomyRelayerProps,
-    InitBiconomyRelayerType,
-    WebHookAttributesType
+    InitBiconomyRelayerType
 } from './biconomy';
 
 export type ZeroWalletProviderType = ethers.providers.JsonRpcProvider;
@@ -43,7 +43,7 @@ export type BuildTransactionParams = BiconomyBuildTransactionParams;
 
 export type deployProxyWalletParams = {
     zeroWalletAddress: string;
-    webHookAttributes: WebHookAttributesType;
+    webHookAttributes: DeployWebHookAttributesType;
 };
 export type DatabaseConfig = {
     user: string;
