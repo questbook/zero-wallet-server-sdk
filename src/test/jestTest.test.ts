@@ -127,3 +127,19 @@ describe('testing functions working with authorizer', () => {
         await gasTank.deleteUser(constants.wallet.address);
     });
 });
+
+describe('testing functions working with relayer', () => {
+    test('check buildTransaction functions', async () => {
+        const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
+
+        expect(await gasTank.doesUserExist(constants.wallet.address)).toBe(
+            false
+        );
+        const wallet = ethers.Wallet.createRandom();
+        await gasTank.addAuthorizedUser(constants.wallet.address);
+        expect(await gasTank.doesUserExist(constants.wallet.address)).toBe(
+            true
+        );
+        
+    });
+});
