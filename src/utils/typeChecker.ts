@@ -8,7 +8,7 @@ export function isGasTankProps(obj: any): obj is GasTankProps {
     if (typeof obj?.name !== 'string') isTypeCorrect = false;
     if (typeof obj?.apiKey !== 'string') isTypeCorrect = false;
     if (typeof obj?.name !== 'string') isTypeCorrect = false;
-    if (obj?.chainId === undefined) isTypeCorrect = false;
+    if (typeof obj?.chainId !== 'string' && typeof obj?.chainId !== 'number') isTypeCorrect = false;
     if (typeof obj?.providerURL !== 'string') isTypeCorrect = false;
     if (!obj?.whiteList?.length) isTypeCorrect = false;
     if (!isTypeCorrect) {
