@@ -1,3 +1,6 @@
+
+import fetch from 'node-fetch';
+
 import { SupportedChainId } from '../constants/chains';
 import {
     BuildExecTransactionType,
@@ -146,7 +149,11 @@ export class GasTank {
         ) {
             throw new Error('User is not authorized');
         }
-        return await this.#relayer.deploySCW(params.zeroWalletAddress);
+        try {
+            return await this.#relayer.deploySCW(params.zeroWalletAddress);
+        } catch (e) {
+            throw new Error(e as string);
+        }
     }
 
     async getNonce(address: string): Promise<string | boolean> {
@@ -156,4 +163,5 @@ export class GasTank {
     public toString(): string {
         return `GasTank: ${this.gasTankName}, chainId: ${this.chainId}`;
     }
+    
 }

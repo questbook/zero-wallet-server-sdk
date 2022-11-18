@@ -73,6 +73,11 @@ export type WebHookAttributesType = {
     chainId: number;
 };
 
+export type DeployWebHookAttributesType = {
+    nonce: string;
+    signedNonce: SignedMessage;
+};
+
 export type CheckIfWalletExistsParams = {
     eoa: string;
 };

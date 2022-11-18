@@ -1,14 +1,34 @@
-import { WalletImportFormatError } from '@bitauth/libauth';
-import { afterAll, describe, expect, test } from '@jest/globals';
+import { PassThrough } from 'stream';
+
+import {
+    afterAll,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    test
+} from '@jest/globals';
 import { ethers } from 'ethers';
 
-import { GasTank } from '../lib/GasTank';
 import { ZeroWallet } from '../lib/ZeroWallet';
 
 const constants = {
+    // wallet: new ethers.Wallet(
+    //     '0x9d3952535ae64917bedd7a42d0b2b5990ecbd1a127e95c5afad2d048ebbce343'
+    // ),
     wallet: ethers.Wallet.createRandom(),
     zeroWallet: new ZeroWallet('./testing.yml')
 };
+beforeEach(async () => {
+    try {
+        await constants.zeroWallet
+            .getGasTank('testGasTankName')
+            .deleteUser(constants.wallet.address);
+    } catch (e) {
+        PassThrough;
+    }
+});
+
 afterAll(() => {
     constants.zeroWallet
         .getGasTank('testGasTankName')
@@ -31,6 +51,10 @@ describe('testing functions working with authorizer', () => {
     test('check deleteUser function', async () => {
         const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
 
+        expect(await gasTank.doesUserExist(constants.wallet.address)).toBe(
+            false
+        );
+        gasTank.addAuthorizedUser(constants.wallet.address);
         expect(await gasTank.doesUserExist(constants.wallet.address)).toBe(
             true
         );
@@ -84,7 +108,7 @@ describe('testing functions working with authorizer', () => {
             v: nonceSig.v,
             transactionHash: nonceHash
         };
-        
+
         expect(
             await gasTank.authorizer.isUserAuthorized(
                 signedNonce,
@@ -95,7 +119,7 @@ describe('testing functions working with authorizer', () => {
 
         await gasTank.deleteUser(constants.wallet.address);
     });
-     
+
     test('check isUserAuthorized function returns false', async () => {
         const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
 
@@ -105,7 +129,7 @@ describe('testing functions working with authorizer', () => {
         if (typeof nonce !== 'string') {
             return;
         }
-        
+
         const signature = await constants.wallet.signMessage(nonce);
         const nonceSig = ethers.utils.splitSignature(signature);
         const nonceHash = ethers.utils.hashMessage(nonce);
@@ -115,7 +139,7 @@ describe('testing functions working with authorizer', () => {
             v: nonceSig.v,
             transactionHash: nonceHash
         };
-        
+
         expect(
             await gasTank.authorizer.isUserAuthorized(
                 signedNonce,
@@ -129,17 +153,116 @@ describe('testing functions working with authorizer', () => {
 });
 
 describe('testing functions working with relayer', () => {
-    test('check buildTransaction functions', async () => {
+    test('check that buildTransaction function throws error : "User is not registered!"', async () => {
         const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
 
         expect(await gasTank.doesUserExist(constants.wallet.address)).toBe(
             false
         );
-        const wallet = ethers.Wallet.createRandom();
-        await gasTank.addAuthorizedUser(constants.wallet.address);
-        expect(await gasTank.doesUserExist(constants.wallet.address)).toBe(
-            true
+        const signedNonce = {
+            r: '2322',
+            s: '0x00',
+            v: 0,
+            transactionHash: '0x00'
+        };
+        const webHookAttributes = {
+            nonce: 'nonce',
+            signedNonce,
+            to: 'to',
+            chainId: 5
+        };
+        const params = {
+            populatedTx: 'populatedTx',
+            targetContractAddress: 'targetContractAddress',
+            zeroWalletAddress: constants.wallet.address,
+            webHookAttributes
+        };
+        await expect(gasTank.buildTransaction(params)).rejects.toThrow(
+            'User is not registered!'
         );
+    });
+    test('check that buildTransaction function throws error : "SCW is not deployed" ', async () => {
+        const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
+
+        await gasTank.addAuthorizedUser(constants.wallet.address);
+        const nonce = await gasTank.getNonce(constants.wallet.address);
+        expect(nonce).not.toBe(false);
+        if (typeof nonce !== 'string') {
+            return;
+        }
+
+        const signature = await constants.wallet.signMessage(nonce);
+        const nonceSig = ethers.utils.splitSignature(signature);
+        const nonceHash = ethers.utils.hashMessage(nonce);
+        const signedNonce = {
+            r: nonceSig.r,
+            s: nonceSig.s,
+            v: nonceSig.v,
+            transactionHash: nonceHash
+        };
+
+        const webHookAttributes = {
+            nonce,
+            signedNonce,
+            to: 'to',
+            chainId: 5
+        };
+        const params = {
+            populatedTx: 'populatedTx',
+            targetContractAddress: 'targetContractAddress',
+            zeroWalletAddress: constants.wallet.address,
+            webHookAttributes
+        };
+        await expect(gasTank.buildTransaction(params)).rejects.toThrow(
+            `SCW is not deployed for ${constants.wallet.address}`
+        );
+    });
+    test('check that doesProxyWalletExist function returns false" ', async () => {
+        const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
+
+        await gasTank.addAuthorizedUser(constants.wallet.address);
+
+        expect(
+            (await gasTank.doesProxyWalletExist(constants.wallet.address))
+                .doesWalletExist
+        ).toBe(false);
+        await gasTank.deleteUser(constants.wallet.address);
+    });
+
+    test('testing deployProxyWallet & doesProxyWalletExist functions" ', async () => {
+        const gasTank = constants.zeroWallet.getGasTank('testGasTankName');
+
+        await gasTank.addAuthorizedUser(constants.wallet.address);
+        const nonce = await gasTank.getNonce(constants.wallet.address);
+        expect(nonce).not.toBe(false);
+        if (typeof nonce !== 'string') {
+            return;
+        }
+
+        const signature = await constants.wallet.signMessage(nonce);
+        const nonceSig = ethers.utils.splitSignature(signature);
+        const nonceHash = ethers.utils.hashMessage(nonce);
+        const signedNonce = {
+            r: nonceSig.r,
+            s: nonceSig.s,
+            v: nonceSig.v,
+            transactionHash: nonceHash
+        };
+        const webHookAttributes = {
+            nonce: nonce,
+            signedNonce: signedNonce
+        };
+
+        const params = {
+            zeroWalletAddress: constants.wallet.address,
+            webHookAttributes: webHookAttributes
+        };
+        const scwAddress = await gasTank.deployProxyWallet(params);
         
+        gasTank.deleteUser(constants.wallet.address);
+
+        expect(
+            await gasTank.doesProxyWalletExist(constants.wallet.address)
+        ).toEqual({ doesWalletExist: true, walletAddress: scwAddress });
     });
 });

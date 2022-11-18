@@ -94,6 +94,14 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         nonce: string,
         webwallet_address: string
     ) {
+        try {
+            if (!await this.doesAddressExist(webwallet_address)) {
+                throw new Error('User is not registered!');
+            }
+        } catch (err) {
+            throw new Error(err as string);
+        }
+
         const address = this.#recoverAddress(signedNonce);
 
         if (address !== webwallet_address) {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DatabaseConfig, fileDoc } from '../types';
 import { GasTanksType } from '../types';
 import { GasTankProps } from '../types';
