@@ -21,7 +21,8 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         whiteList: string[],
         gasTankID: string
     ) {
-        this.#pool = new Pool(databaseConfig);
+        const parsedDataBaseConfig = {...databaseConfig, port: +databaseConfig.port}
+        this.#pool = new Pool(parsedDataBaseConfig);
         this.loadingTableCreationWithIndex = this.getDatabaseReadyWithIndex();
         this.#whiteList = whiteList;
 
@@ -103,7 +104,6 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     }
 
     async getDatabaseReadyWithIndex() {
-        console.log('creating table');
         try {
             await this.#pool.query(createGaslessLoginTableQuery);
         } catch (err) {
@@ -119,7 +119,6 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async #query(query: string, values?: Array<any>): Promise<any> {
-        console.log('querying');
         try {
             await this.loadingTableCreationWithIndex;
             const res = await this.#pool.query(query, values);

@@ -44,7 +44,7 @@ function isDatabaseConfig(obj: any): obj is DatabaseConfig {
     if (typeof obj?.host !== 'string') isTypeCorrect = false;
     if (typeof obj?.database !== 'string') isTypeCorrect = false;
     if (typeof obj?.password !== 'string') isTypeCorrect = false;
-    if (typeof obj?.port !== 'number') isTypeCorrect = false;
+    if (typeof obj?.port !== 'number' && typeof obj?.port !== 'string') isTypeCorrect = false;
     if (!isTypeCorrect) {
         throw new Error(
             'databaseConfig in yml file does not match the required structure'
