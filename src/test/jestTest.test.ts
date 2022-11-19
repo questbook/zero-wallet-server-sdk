@@ -1,21 +1,11 @@
 import { PassThrough } from 'stream';
 
-import {
-    afterAll,
-    beforeAll,
-    beforeEach,
-    describe,
-    expect,
-    test
-} from '@jest/globals';
+import { afterAll, beforeEach, describe, expect, test } from '@jest/globals';
 import { ethers } from 'ethers';
 
 import { ZeroWallet } from '../lib/ZeroWallet';
 
 const constants = {
-    // wallet: new ethers.Wallet(
-    //     '0x9d3952535ae64917bedd7a42d0b2b5990ecbd1a127e95c5afad2d048ebbce343'
-    // ),
     wallet: ethers.Wallet.createRandom(),
     zeroWallet: new ZeroWallet('./testing.yml')
 };
@@ -258,7 +248,7 @@ describe('testing functions working with relayer', () => {
             webHookAttributes: webHookAttributes
         };
         const scwAddress = await gasTank.deployProxyWallet(params);
-        
+
         gasTank.deleteUser(constants.wallet.address);
 
         expect(

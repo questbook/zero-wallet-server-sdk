@@ -1,6 +1,3 @@
-
-import fetch from 'node-fetch';
-
 import { SupportedChainId } from '../constants/chains';
 import {
     BuildExecTransactionType,
@@ -62,6 +59,16 @@ export class GasTank {
             throw new Error(e as string);
         }
     }
+    async getNonce(address: string): Promise<string | boolean> {
+        return await this.authorizer.getNonce(address);
+    }
+    async refreshNonce(address: string) : Promise<string> {
+        try {
+            return await this.authorizer.refreshUserAuthorization(address);
+        } catch (e) {
+            throw new Error(e as string);
+        }
+    }
 
     isInWhiteList(contractAddress: string): boolean {
         return this.authorizer.isInWhiteList(contractAddress);
@@ -94,11 +101,15 @@ export class GasTank {
                 'target contract is not included in the white List'
             );
         }
-        return await this.#relayer.buildExecTransaction(
-            params.populatedTx,
-            params.targetContractAddress,
-            scwAddress
-        );
+        try {
+            return await this.#relayer.buildExecTransaction(
+                params.populatedTx,
+                params.targetContractAddress,
+                scwAddress
+            );
+        } catch (e) {
+            throw new Error(e as string);
+        }
     }
 
     async sendGaslessTransaction(
@@ -128,15 +139,22 @@ export class GasTank {
                 'target contract is not included in the white List'
             );
         }
-
-        return await this.#relayer.sendGaslessTransaction(params);
+        try {
+            return await this.#relayer.sendGaslessTransaction(params);
+        } catch (e) {
+            throw new Error(e as string);
+        }
     }
 
     async doesProxyWalletExist(zeroWalletAddress: string): Promise<{
         doesWalletExist: boolean;
         walletAddress: string;
     }> {
-        return await this.#relayer.doesSCWExists(zeroWalletAddress);
+        try {
+            return await this.#relayer.doesSCWExists(zeroWalletAddress);
+        } catch (e) {
+            throw new Error(e as string);
+        }
     }
 
     async deployProxyWallet(params: deployProxyWalletParams): Promise<string> {
@@ -156,12 +174,7 @@ export class GasTank {
         }
     }
 
-    async getNonce(address: string): Promise<string | boolean> {
-        return await this.authorizer.getNonce(address);
-    }
-
     public toString(): string {
         return `GasTank: ${this.gasTankName}, chainId: ${this.chainId}`;
     }
-    
 }

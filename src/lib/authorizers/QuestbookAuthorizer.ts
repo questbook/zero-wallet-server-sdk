@@ -95,7 +95,7 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         webwallet_address: string
     ) {
         try {
-            if (!await this.doesAddressExist(webwallet_address)) {
+            if (!(await this.doesAddressExist(webwallet_address))) {
                 throw new Error('User is not registered!');
             }
         } catch (err) {
