@@ -45,6 +45,7 @@ export type deployProxyWalletParams = {
     zeroWalletAddress: string;
     webHookAttributes: DeployWebHookAttributesType;
 };
+
 export type DatabaseConfig = {
     user: string;
     host: string;

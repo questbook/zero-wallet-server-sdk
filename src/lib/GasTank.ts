@@ -167,11 +167,13 @@ export class GasTank {
         ) {
             throw new Error('User is not authorized');
         }
+
         try {
             return await this.#relayer.deploySCW(params.zeroWalletAddress);
         } catch (e) {
             throw new Error(e as string);
         }
+
     }
 
     public toString(): string {

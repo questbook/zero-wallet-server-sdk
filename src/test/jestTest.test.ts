@@ -3,6 +3,9 @@ import { PassThrough } from 'stream';
 import { afterAll, beforeEach, describe, expect, test } from '@jest/globals';
 import { ethers } from 'ethers';
 
+
+import { GasTank } from '../lib/GasTank';
+
 import { ZeroWallet } from '../lib/ZeroWallet';
 
 const constants = {
@@ -98,7 +101,7 @@ describe('testing functions working with authorizer', () => {
             v: nonceSig.v,
             transactionHash: nonceHash
         };
-
+        
         expect(
             await gasTank.authorizer.isUserAuthorized(
                 signedNonce,
@@ -139,6 +142,7 @@ describe('testing functions working with authorizer', () => {
         ).toBe(false);
 
         await gasTank.deleteUser(constants.wallet.address);
+
     });
 });
 
@@ -254,5 +258,6 @@ describe('testing functions working with relayer', () => {
         expect(
             await gasTank.doesProxyWalletExist(constants.wallet.address)
         ).toEqual({ doesWalletExist: true, walletAddress: scwAddress });
+
     });
 });

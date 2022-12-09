@@ -28,7 +28,7 @@ export class BiconomyRelayer implements BaseRelayer {
             relayerProps.providerURL
         ) as ZeroWalletProviderType;
 
-        this.chainId = relayerProps.chainId;
+        this.chainId = +relayerProps.chainId;
         this.#provider = provider;
         this.#apiKey = relayerProps.apiKey;
 
