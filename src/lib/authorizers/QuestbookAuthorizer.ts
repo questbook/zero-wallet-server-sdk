@@ -64,15 +64,19 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         if (!(await this.doesAddressExist(address))) {
             throw new Error('User does not exist!');
         }
-        await this.#query(
-            'DELETE FROM gasless_login WHERE address = $1 AND gasTankID = $2 ;',
-            [address, this.#gasTankID]
-        );
+        try {
+            await this.#query(
+                'DELETE FROM gasless_login WHERE address = $1 AND gasTankID = $2 ;',
+                [address, this.#gasTankID]
+            );
+        } catch (err) {
+            throw new Error(err as string);
+        }
     }
 
     async refreshUserAuthorization(address: string) {
         if (!(await this.doesAddressExist(address))) {
-            throw new Error('User not Registered!');
+            throw new Error('User is not registered!');
         }
 
         const newNonce = this.#createNonce(100);
@@ -109,11 +113,11 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         } catch (err) {
             throw new Error(err as string);
         }
-        // try {
-        //     await this.#pool.query(createIndex);
-        // } catch (err) {
-        //     throw new Error(err as string);
-        // }
+        try {
+            await this.#pool.query(createIndex);
+        } catch (err) {
+            throw new Error(err as string);
+        }
         return;
     }
 
@@ -146,16 +150,15 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     }
 
     async doesAddressExist(address: string): Promise<boolean> {
-        const results = await this.#query(
-            'SELECT * FROM gasless_login WHERE address = $1 AND gasTankID= $2 ;',
-            [address, this.#gasTankID]
-        );
-
-        if (results.rows.length === 0) {
-            return false;
+        try {
+            const results = await this.#query(
+                'SELECT * FROM gasless_login WHERE address = $1 AND gasTankID= $2 ;',
+                [address, this.#gasTankID]
+            );
+            return results.rows.length > 0;
+        } catch (err) {
+            throw new Error(err as string);
         }
-
-        return true;
     }
 
     async getNonce(address: string): Promise<boolean | string> {
