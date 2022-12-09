@@ -131,8 +131,7 @@ export class GasTank {
 
     async doesProxyWalletExist(zeroWalletAddress: string): Promise<{
         doesWalletExist: boolean;
-        walletAddress: string;
-    }> {
+        walletAddress: string; }> {
         return await this.#relayer.doesSCWExists(zeroWalletAddress);
     }
 

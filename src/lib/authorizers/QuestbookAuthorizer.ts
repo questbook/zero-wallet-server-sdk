@@ -3,7 +3,6 @@ import { Pool } from 'pg';
 
 import {
     createGaslessLoginTableQuery,
-    createIndex,
     NONCE_EXPIRATION
 } from '../../constants/database';
 import { DatabaseConfig, SignedMessage } from '../../types';
@@ -22,7 +21,8 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         whiteList: string[],
         gasTankID: string
     ) {
-        this.#pool = new Pool(databaseConfig);
+        const parsedDataBaseConfig = {...databaseConfig, port: +databaseConfig.port}
+        this.#pool = new Pool(parsedDataBaseConfig);
         this.loadingTableCreationWithIndex = this.getDatabaseReadyWithIndex();
         this.#whiteList = whiteList;
 
