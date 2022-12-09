@@ -3,7 +3,9 @@ import { Pool } from 'pg';
 
 import {
     createGaslessLoginTableQuery,
-    createIndex,
+    createIndexForGasLessLoginTable,
+    createIndexForScwWhitelistTable,
+    createScwWhitelistTable,
     NONCE_EXPIRATION
 } from '../../constants/database';
 import { DatabaseConfig, SignedMessage } from '../../types';
@@ -22,7 +24,10 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         whiteList: string[],
         gasTankID: string
     ) {
-        const parsedDataBaseConfig = {...databaseConfig, port: +databaseConfig.port}
+        const parsedDataBaseConfig = {
+            ...databaseConfig,
+            port: +databaseConfig.port
+        };
         this.#pool = new Pool(parsedDataBaseConfig);
         this.loadingTableCreationWithIndex = this.getDatabaseReadyWithIndex();
         this.#whiteList = whiteList;
@@ -33,10 +38,29 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
         await this.#pool.end();
     }
 
-    isInWhiteList(contractAddress: string): boolean {
-        return this.#whiteList.includes(contractAddress);
-    }
+    async isInWhiteList(contractAddress: string): Promise<boolean> {
+        if (this.#whiteList.includes(contractAddress)) return true;
 
+        const results = await this.#query(
+            'SELECT * FROM scwWhitelist WHERE address = $1 AND gasTankID = $2 ;',
+            [contractAddress, this.#gasTankID]
+        );
+        if (results.rows.length === 0) {
+            return false;
+        }
+        return true;
+    }
+    async addToScwWhitelist(contractAddress: string): Promise<void> {
+        if (await this.isInWhiteList(contractAddress)) return;
+        try {
+            await this.#query('INSERT INTO scwWhitelist VALUES ($1, $2);', [
+                contractAddress,
+                this.#gasTankID
+            ]);
+        } catch (err) {
+            throw new Error(err as string);
+        }
+    }
     async addAuthorizedUser(address: string) {
         if (await this.doesAddressExist(address)) {
             throw new Error(
@@ -119,13 +143,19 @@ export default class QuestbookAuthorizer implements BaseAuthorizer {
     async getDatabaseReadyWithIndex() {
         try {
             await this.#pool.query(createGaslessLoginTableQuery);
+            await this.#pool.query(createScwWhitelistTable);
         } catch (err) {
             throw new Error(err as string);
         }
         try {
-            await this.#pool.query(createIndex);
+            await this.#pool.query(createIndexForGasLessLoginTable);
         } catch (err) {
-            throw new Error(err as string);
+            console.log('error creating index in gasless_login table');
+        }
+        try {
+            await this.#pool.query(createIndexForScwWhitelistTable);
+        } catch (err) {
+            console.log('error creating index in whitelist table');
         }
         return;
     }

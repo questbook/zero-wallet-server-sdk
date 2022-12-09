@@ -62,18 +62,13 @@ export class GasTank {
     async getNonce(address: string): Promise<string | boolean> {
         return await this.authorizer.getNonce(address);
     }
-    async refreshNonce(address: string) : Promise<string> {
+    async refreshNonce(address: string): Promise<string> {
         try {
             return await this.authorizer.refreshUserAuthorization(address);
         } catch (e) {
             throw new Error(e as string);
         }
     }
-
-    isInWhiteList(contractAddress: string): boolean {
-        return this.authorizer.isInWhiteList(contractAddress);
-    }
-
     async buildTransaction(params: BuildTransactionParams): Promise<{
         scwAddress: string;
         safeTXBody: BuildExecTransactionType;
@@ -169,11 +164,14 @@ export class GasTank {
         }
 
         try {
-            return await this.#relayer.deploySCW(params.zeroWalletAddress);
+            const scwAddress = await this.#relayer.deploySCW(
+                params.zeroWalletAddress
+            );
+            await this.authorizer.addToScwWhitelist(scwAddress);
+            return scwAddress;
         } catch (e) {
             throw new Error(e as string);
         }
-
     }
 
     public toString(): string {
